@@ -4,6 +4,8 @@ import autograd.numpy.random as rd
 import scipy.optimize as opt
 import matplotlib.pyplot as plt
 
+from NewtonKrylov import *
+
 def Collisions_Reactions(f_1, f0, f1, relaxation_times, A, B, k1, k2, k3, k4, weights, dt):
 	phi_U = f_1[0,:] + f0[0,:] + f1[0,:] # Density of U (index 0, all space)
 	phi_V = f_1[1,:] + f0[1,:] + f1[1,:] # Density of V (index 0, all space)

@@ -5,7 +5,7 @@ import scipy.sparse.linalg as slg
 
 from GMRES import *
 
-def NewtonKrylov(psi, d_psi, x0, max_it, tolerance=1.e-6, verbose=False, cb_type='x'):
+def NewtonKrylov(psi, d_psi, x0, max_it, tolerance=1.e-6, verbose=False):
     s = x0.size
     x = np.copy(x0)
     f = psi(x)
@@ -20,19 +20,18 @@ def NewtonKrylov(psi, d_psi, x0, max_it, tolerance=1.e-6, verbose=False, cb_type
         dpsi_v = lambda v: d_psi(x, v, f)
         A = slg.LinearOperator((s, s), matvec=dpsi_v)
         def cb(input):
-            if cb_type == 'x':
+            if verbose:
                 print('GMRES Residue', lg.norm(A.matvec(input) + f))
-            elif cb_type == 'pr_norm':
-                print('PR GMRES Residue:', lg.norm(input))
 
         # Use the built-in GMRES routine, my implementation didn't cut it
-        dx, _ = slg.gmres(A, -f, x, callback=cb, callback_type='x', atol=tolerance, restart=50) #normally standard restart param
+        dx, _ = slg.lgmres(A, -f, np.copy(x), callback=cb, maxiter=1, outer_v=[], store_outer_Av=False)
         gmres_res = lg.norm(A.matvec(dx) + f)
 
         # Update the Newton Iterate
         x = x + dx
         f = psi(x)
-        print('Residue After GMRES', gmres_res, lg.norm(f))
+        if verbose:
+            print('Residue After GMRES', gmres_res, lg.norm(f))
 
         num_it += 1
 
