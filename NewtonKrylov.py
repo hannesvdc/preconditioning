@@ -1,0 +1,44 @@
+import autograd.numpy as np
+import autograd.numpy.linalg as lg
+
+import scipy.sparse.linalg as slg
+
+from GMRES import *
+
+def NewtonKrylov(psi, d_psi, x0, max_it, tolerance=1.e-6, verbose=False, cb_type='x'):
+    s = x0.size
+    x = np.copy(x0)
+    f = psi(x)
+    print('\nInitial Residue', lg.norm(f))
+
+    num_it = 0
+    while num_it <= max_it and lg.norm(f) > tolerance:
+        if verbose:
+            print('\nNK Iteration', num_it, ', Currrent Residue:', lg.norm(f))
+
+        # Setup operators for GMRES
+        dpsi_v = lambda v: d_psi(x, v, f)
+        A = slg.LinearOperator((s, s), matvec=dpsi_v)
+        def cb(input):
+            if cb_type == 'x':
+                print('GMRES Residue', lg.norm(A.matvec(input) + f))
+            elif cb_type == 'pr_norm':
+                print('PR GMRES Residue:', lg.norm(input))
+
+        # Use the built-in GMRES routine, my implementation didn't cut it
+        dx, _ = slg.gmres(A, -f, x, callback=cb, callback_type='x', atol=tolerance, restart=50) #normally standard restart param
+        gmres_res = lg.norm(A.matvec(dx) + f)
+
+        # Update the Newton Iterate
+        x = x + dx
+        f = psi(x)
+        print('Residue After GMRES', gmres_res, lg.norm(f))
+
+        num_it += 1
+
+    if num_it >= max_it:
+        print('Newton-Krylov did not Convergence withing the Specified Number of Iterations. Returning Curren Iteration.')
+        return x, f
+    
+    print('\nNK Solution Found After',  num_it, 'Iterations!\n')
+    return x, f
