@@ -55,7 +55,7 @@ def _LatticeBM_Schnakenberg(f_1, f0, f1, relaxation_times, A, B, k1, k2, k3, k4,
 	return f_1, f0, f1
 
 # Implements D1Q3 Lattice-Boltzmann
-def LBM(U, V, T, verbose=False):
+def LBM(U, V, T, verbose=False, full_output=False):
 	# Lattice Parameters
 	M = 200
 	L = 1.0
@@ -77,6 +77,11 @@ def LBM(U, V, T, verbose=False):
 	f0  = weights[1] * np.vstack((U, V)) # Stay Put
 	f1  = weights[2] * np.vstack((U, V)) # Move to the right
 
+	if full_output:
+		phi_U_history = []
+		phi_V_history = []
+		t_history = []
+
 	# Timestepping
 	n = 0
 	n_steps = T / dt 
@@ -94,10 +99,21 @@ def LBM(U, V, T, verbose=False):
 		f1 = np.copy(f1_new)
 		n += 1
 
+		if full_output:
+			phi_U = f_1[0,:] + f0[0,:] + f1[0,:] # Density of U (index 0, all space)
+			phi_V = f_1[1,:] + f0[1,:] + f1[1,:] # Density of V (index 0, all space)
+			phi_U_history.append(phi_U)
+			phi_V_history.append(phi_V)
+			t_history.append((n+1.0) * dt)
+
 	# Comppute the densities for plotting
 	phi_U = f_1[0,:] + f0[0,:] + f1[0,:] # Density of U (index 0, all space)
 	phi_V = f_1[1,:] + f0[1,:] + f1[1,:] # Density of V (index 0, all space)
-	return phi_U, phi_V
+
+	if full_output:
+		return phi_U, phi_V, phi_U_history[-6], phi_V_history[-6], 5*dt
+	else:
+		return phi_U, phi_V
 
 def plot_LBM():
 	# Method parameters
@@ -154,7 +170,7 @@ def NewtonKrylovLBM(store=False):
 	
 	# Parameters for the Newton-Krylov Method
 	tolerance = 1.e-12
-	solution = opt.newton_krylov(psi, x0, verbose=True, f_tol=tolerance)
+	solution = opt.newton_krylov(psi, x0, rdiff=1.e-8, verbose=True, f_tol=tolerance)
 	phi_U = solution[0:M]; phi_V = solution[M:]
 	print('Solution:', solution)
 	print('Residue:', lg.norm(psi(solution)))
