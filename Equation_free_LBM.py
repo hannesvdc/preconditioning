@@ -93,9 +93,15 @@ def NewtonKrylovEqFree():
 	eq_free_tolerance = 1.e-4
 
 	# Load the initial condition (steady-state for now)
+	eps = 0.5
 	directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK_LBM/'
 	filename = 'Steady_State_LBM_dt=1e-4.npy'
 	x0 = np.load(directory + filename).flatten()
+	x_array = np.linspace(0.0, 1.0, M)
+	U = x0[0:M]; V = x0[M:]
+	U = U + eps*np.sin(x_array)
+	V = V + eps*np.cos(x_array)
+	x0 = np.concatenate((U, V))
 	
 	# psi function
 	def psi(x):
@@ -114,7 +120,6 @@ def NewtonKrylovEqFree():
 	print('Residue:', lg.norm(psi(solution)))
 
 	# Plot the fixed point
-	x_array = np.linspace(0.0, 1.0, M)
 	plt.plot(x_array, phi_U, label=r'$U(x)$', color='red')
 	plt.plot(x_array, phi_V, label=r'$V(x)$', color='blue')
 	plt.xlabel(r'$x$')
