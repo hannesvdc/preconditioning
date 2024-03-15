@@ -93,7 +93,7 @@ def NewtonKrylovEqFree():
 	eq_free_tolerance = 1.e-4
 
 	# Load the initial condition (steady-state for now)
-	eps = 0.5
+	eps = 0.1
 	directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK_LBM/'
 	filename = 'Steady_State_LBM_dt=1e-4.npy'
 	x0 = np.load(directory + filename).flatten()
@@ -123,7 +123,7 @@ def NewtonKrylovEqFree():
 	plt.plot(x_array, phi_U, label=r'$U(x)$', color='red')
 	plt.plot(x_array, phi_V, label=r'$V(x)$', color='blue')
 	plt.xlabel(r'$x$')
-	plt.title('NK- Equation-Free Fixed Point')
+	plt.title('NK - Equation-Free Fixed Point')
 
 	plt.legend()
 	plt.show()
