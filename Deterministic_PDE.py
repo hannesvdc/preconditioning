@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as onp
 import scipy.optimize as opt
 
-from NewtonKrylov import *
+from internal.NewtonKrylov import *
 
 
 def f(x, d1, d2):

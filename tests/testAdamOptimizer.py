@@ -93,8 +93,8 @@ def Ackleys():
     print('Local Minimum', us, df(us))
 
 if __name__ == '__main__':
-    #quadraticTest()
-    #quadraticTest3d()
-    #multiModal2d()
-    #MullerBrown()
+    quadraticTest()
+    quadraticTest3d()
+    multiModal2d()
+    MullerBrown()
     Ackleys()
