@@ -52,7 +52,35 @@ def multiModal2d():
 
     print('Local Minimum', xs, df(xs))
 
+def MullerBrown():
+    print('\nRunning Muller-Brown Test Case')
+    A=[-200,-100,-170,15]
+    a=[-1,-1,-6.5,0.7]
+    b=[0,0,11,0.6]
+    c=[-10,-10,-6.5,0.7]
+    x0=[1,0,-0.5,-1]
+    y0=[0,0.5,1.5,1]
+
+    def V(u):
+        p = 0.0
+        for k in range(4):
+            t1 = a[k]*(u[0] - x0[k])**2
+            t2 = b[k]*(u[0] - x0[k])*(u[1] - y0[k])
+            t3 = c[k]*(u[1] - y0[k])**2
+            p += A[k]*np.exp(t1 + t2 + t3)
+        return p
+    dV = jacobian(V)
+
+    rng = rd.RandomState()
+    optimizer = adam.AdamOptimizer(learning_rate=0.01)
+
+    u0 = rng.normal(np.array([0.0, 0.6]), scale=np.sqrt(0.5), size=2)
+    us = optimizer.optimize(dV, u0)
+
+    print('Local Minimum', us, dV(us))
+
 if __name__ == '__main__':
     quadraticTest()
     quadraticTest3d()
     multiModal2d()
+    MullerBrown()
