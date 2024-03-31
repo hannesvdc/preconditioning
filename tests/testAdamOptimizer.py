@@ -7,7 +7,7 @@ import autograd.numpy.random as rd
 
 from autograd import jacobian
 
-import internal.Adam as adam
+import algorithms.Adam as adam
 
 def quadraticTest():
     print('\nRunning Quadratic Test Case.')

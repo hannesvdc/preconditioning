@@ -7,7 +7,7 @@ import numpy.random as rd
 from autograd import jacobian
 
 
-from internal.NewtonKrylov import *
+from algorithms.NewtonKrylov import *
 
 def testNewtonKrylov1():
     psi = lambda x: np.array([x[0]*np.sin(x[1]), x[0]**2 + x[1]**2 - 1.0])

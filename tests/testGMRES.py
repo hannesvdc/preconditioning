@@ -4,7 +4,7 @@ sys.path.append('../')
 import autograd.numpy as np
 import autograd.numpy.linalg as lg
 
-from GMRES import *
+from algorithms.GMRES import *
 
 def testConvergence():
     n = 4
