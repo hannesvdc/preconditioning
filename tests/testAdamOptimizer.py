@@ -33,7 +33,7 @@ def quadraticTest3d():
     f  = lambda x: 0.5*np.dot(x, np.dot(M, x)) + np.dot(b, x)
     df = lambda x: np.dot(M, x) + b
 
-    optimizer = adam.AdamOptimizer(learning_rate=0.1)
+    optimizer = adam.AdamOptimizer(learning_rate=0.01)
 
     x0 = np.zeros(3)
     xs = optimizer.optimize(df, x0)
@@ -79,8 +79,22 @@ def MullerBrown():
 
     print('Local Minimum', us, dV(us))
 
+def Ackleys():
+    print('\nRunning Ackley\'s Test Case')
+    f = lambda x: -20.0*np.exp(-0.2*np.sqrt(0.5*(x[0]**2 + x[1]**2))) - np.exp(0.5*(np.cos(2.0*np.pi*x[0]) + np.cos(2.0*np.pi*x[1])))
+    df = jacobian(f)
+
+    rng = rd.RandomState()
+    optimizer = adam.AdamOptimizer(learning_rate=0.1)
+
+    u0 = rng.normal(scale=2.0, size=2)
+    us = optimizer.optimize(df, u0)
+
+    print('Local Minimum', us, df(us))
+
 if __name__ == '__main__':
-    quadraticTest()
-    quadraticTest3d()
-    multiModal2d()
-    MullerBrown()
+    #quadraticTest()
+    #quadraticTest3d()
+    #multiModal2d()
+    #MullerBrown()
+    Ackleys()
