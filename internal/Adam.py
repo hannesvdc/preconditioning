@@ -16,7 +16,6 @@ class AdamOptimizer:
 
         n_iterations = 1
         while lg.norm(g) > tolerance:
-            print('norm of gradient', lg.norm(g))
             m = self.beta1 * m + (1.0 - self.beta1) * g
             v = self.beta2 * v + (1.0 - self.beta2) * np.dot(g, g)
 
@@ -27,5 +26,5 @@ class AdamOptimizer:
             g = df(x)
             n_iterations += 1
 
-        print('Adam optimzer converged in', n_iterations, 'iterations! Final gradient norm =', lg.norm(g))
+        print('\nAdam optimzer converged in', n_iterations, 'iterations! Final gradient norm =', lg.norm(g))
         return x
