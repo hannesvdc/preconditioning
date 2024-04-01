@@ -33,16 +33,22 @@ def trainRecNet():
     print('Initial weights', weights)
 
     # Do the training
-    n_epochs = 1
+    n_epochs = 1000
     f = lambda w: net.loss(w)
     df = jacobian(f)
-    print(f(weights))
-    print(df(weights))
-    #optimized_weights = optimizer.optimize(df, weights, n_epochs=n_epochs)
+    print('Initial Loss', f(weights))
+    print('Initial Loss Derivative', df(weights))
+    optimizer.optimize(f, df, weights, n_epochs=n_epochs)
+    losses = optimizer.losses
+    grad_norms = optimizer.gradient_norms
 
     # Post-processing
-    #print('Optimized Weights', optimized_weights)
-    #print('Loss', f(optimized_weights))
+    x_axis = np.arrange(losses.size)
+    plt.plot(x_axis, losses, label='Training Loss')
+    plt.plot(x_axis, grad_norms, label='Gradient Norms')
+    plt.xlabel('Epoch')
+    plt.legend()
+    plt.show()
 
 if __name__ == '__main__':
     trainRecNet()

@@ -12,7 +12,7 @@ class R2N2:
         self.data = data # Matrix with b_i as columns
 
     def loss(self, weights): # Weights is a vector with n_inner * (n_inner+1) // 2 elements
-        averaged_loss = 0.0
+        total_loss = 0.0
         N = self.data.shape[1]
 
         for n in range(N):
@@ -22,9 +22,9 @@ class R2N2:
             for k in range(1, self.outer_iterations+1):
                 loss_weight = 4.0**k
                 x = self.inner_forward(x, b, weights)
-                averaged_loss += loss_weight * lg.norm(self.f(x, b))**2
+                total_loss += loss_weight * lg.norm(self.f(x, b))**2
 
-        averaged_loss = averaged_loss / N
+        averaged_loss = total_loss / N
         return averaged_loss
 
     def inner_forward(self, x, b, weights):
