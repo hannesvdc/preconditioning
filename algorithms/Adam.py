@@ -8,14 +8,16 @@ class AdamOptimizer:
         self.beta2 = beta2
         self.epsilon = epsilon
 
-    def optimize(self, df, x0, tolerance=1.e-8):
+    def optimize(self, df, x0, n_epochs=100, tolerance=1.e-8):
         x = np.copy(x0)
         g = df(x)
         m = 0.0
         v = 0.0
+        print('Initialization of Adam optimizer done')
 
         n_iterations = 1
-        while lg.norm(g) > tolerance:
+        while n_iterations < n_epochs and lg.norm(g) > tolerance:
+            print('Epoch #', n_iterations)
             m = self.beta1 * m + (1.0 - self.beta1) * g
             v = self.beta2 * v + (1.0 - self.beta2) * np.dot(g, g)
 
@@ -25,6 +27,7 @@ class AdamOptimizer:
             x = x - self.learning_rate * mp / (np.sqrt(mv + self.epsilon))
             g = df(x)
             n_iterations += 1
+            print('Gradient Norm =', lg.norm(g))
 
         print('\nAdam optimzer converged in', n_iterations, 'iterations! Final gradient norm =', lg.norm(g))
         return x

@@ -11,13 +11,13 @@ class R2N2:
         self.inner_iterations = inner_iterations
         self.data = data # Matrix with b_i as columns
 
-    def loss(self, weights):
+    def loss(self, weights): # Weights is a vector with n_inner * (n_inner+1) // 2 elements
         averaged_loss = 0.0
         N = self.data.shape[1]
 
         for n in range(N):
             x = np.zeros(self.M)
-            b = self.data[:,]
+            b = self.data[:,n]
             
             for k in range(1, self.outer_iterations+1):
                 loss_weight = 4.0**k
@@ -28,18 +28,19 @@ class R2N2:
         return averaged_loss
 
     def inner_forward(self, x, b, weights):
-        V = np.zeros((self.M, self.inner_iterations))
-        V[:,0] = -b
+        V = np.array([-b]).transpose() # This is technically the first function evaluations, but we do not count it.
 
-        for n in range(1, self.inner_iterations):
+        for n in range(1, self.inner_iterations): # do inner_iterations-1 function evaluations
             xp = self._N(x, V, n, weights)
             v = self.f(xp, b)
-            V[:,n] = v
+            V = np.append(V, np.array([v]).transpose(), axis=1)
 
-        return self._N(x, V, self.inner_iterations, weights)
+        return self._N(x, V, self.inner_iterations, weights) # Does this need to be xp? Think!
     
     def _N(self, x, V, n, weights):
-        return x + np.dot(V, weights[n,:])
+        lower_index = ( (n-1) * n ) // 2
+        upper_index = ( n * (n+1) ) // 2
+        return x + np.dot(V, weights[lower_index:upper_index])
     
 
 
