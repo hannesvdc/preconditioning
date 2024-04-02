@@ -2,7 +2,10 @@ import numpy as np
 import numpy.linalg as lg
 
 class AdamOptimizer:
-    def __init__(self, learning_rate=0.001, beta1=0.9, beta2=0.99, epsilon=1.e-8):
+    def __init__(self, loss_fn, d_loss_fn, learning_rate=0.001, beta1=0.9, beta2=0.99, epsilon=1.e-8):
+        self.f = loss_fn
+        self.df = d_loss_fn
+
         self.learning_rate = learning_rate
         self.beta1 = beta1
         self.beta2 = beta2
@@ -16,16 +19,17 @@ class AdamOptimizer:
     def setLearningRate(self, _learning_rate):
         self.learning_rate = _learning_rate
 
-    def optimize(self, f, df, x0, n_epochs=100, tolerance=1.e-8):
+    def optimize(self, x0, n_epochs=100, tolerance=1.e-8):
+        start_iterations = self.n_iterations
         x = np.copy(x0)
-        l = f(x)
-        g = df(x)
+        l = self.f(x)
+        g = self.df(x)
         self.losses.append(l)
         self.gradient_norms.append(lg.norm(g))
 
         m = 0.0
         v = 0.0
-        while self.n_iterations < n_epochs and lg.norm(g) > tolerance:
+        while self.n_iterations - start_iterations < n_epochs and lg.norm(g) > tolerance:
             print('\nEpoch #', self.n_iterations)
             m = self.beta1 * m + (1.0 - self.beta1) * g
             v = self.beta2 * v + (1.0 - self.beta2) * np.dot(g, g)
@@ -34,8 +38,8 @@ class AdamOptimizer:
             mv = v / (1.0 - self.beta2**(self.n_iterations+1))
 
             x = x - self.learning_rate * mp / (np.sqrt(mv) + self.epsilon)
-            l = f(x)
-            g = df(x)
+            l = self.f(x)
+            g = self.df(x)
 
             self.losses.append(l)
             self.gradient_norms.append(lg.norm(g))

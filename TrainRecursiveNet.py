@@ -26,9 +26,9 @@ def trainRecNet():
     inner_iterations = 4
     learning_rate = 0.01
     net = recnet.R2N2(A, outer_iterations, inner_iterations, b)
-    optimizer = adam.AdamOptimizer(learning_rate=learning_rate) # Adam optimizer with standard parameters
     f = lambda w: net.loss(w)
     df = jacobian(f)
+    optimizer = adam.AdamOptimizer(f, df, learning_rate=learning_rate) # Adam optimizer with standard parameters
 
     # Setup the weights as a vector with 10 elements (not a lower-triangular matrix because we need to take gradients)
     n_weights = (inner_iterations * (inner_iterations + 1) ) // 2
@@ -36,12 +36,14 @@ def trainRecNet():
     print('Initial weights', weights)
 
     # Do the training
-    epochs = 25000
+    epochs = 10000
     print('Initial Loss', f(weights))
     print('Initial Loss Derivative', lg.norm(df(weights)))
-    weights = optimizer.optimize(f, df, weights, n_epochs=1000)
+    weights = optimizer.optimize(weights, n_epochs=1000)
     optimizer.setLearningRate(0.001)
-    weights = optimizer.optimize(f, df, weights, n_epochs=epochs) # Continue for the remaining epochs-500 iterations
+    weights = optimizer.optimize(weights, n_epochs=5000) # Continue for the remaining epochs-500 iterations
+    optimizer.setLearningRate(0.0001)
+    weights = optimizer.optimize(weights, n_epochs=epochs-6000)
     losses = np.array(optimizer.losses)
     grad_norms = np.array(optimizer.gradient_norms)
     print('Done Training')
