@@ -24,8 +24,11 @@ def trainRecNet():
     # Setup classes for training
     outer_iterations = 3
     inner_iterations = 4
+    learning_rate = 0.01
     net = recnet.R2N2(A, outer_iterations, inner_iterations, b)
-    optimizer = adam.AdamOptimizer() # Adam optimizer with standard parameters
+    optimizer = adam.AdamOptimizer(learning_rate=learning_rate) # Adam optimizer with standard parameters
+    f = lambda w: net.loss(w)
+    df = jacobian(f)
 
     # Setup the weights as a vector with 10 elements (not a lower-triangular matrix because we need to take gradients)
     n_weights = (inner_iterations * (inner_iterations + 1) ) // 2
@@ -33,19 +36,20 @@ def trainRecNet():
     print('Initial weights', weights)
 
     # Do the training
-    n_epochs = 1000
-    f = lambda w: net.loss(w)
-    df = jacobian(f)
+    epochs = 25000
     print('Initial Loss', f(weights))
-    print('Initial Loss Derivative', df(weights))
-    optimizer.optimize(f, df, weights, n_epochs=n_epochs)
-    losses = optimizer.losses
-    grad_norms = optimizer.gradient_norms
+    print('Initial Loss Derivative', lg.norm(df(weights)))
+    weights = optimizer.optimize(f, df, weights, n_epochs=1000)
+    optimizer.setLearningRate(0.001)
+    weights = optimizer.optimize(f, df, weights, n_epochs=epochs) # Continue for the remaining epochs-500 iterations
+    losses = np.array(optimizer.losses)
+    grad_norms = np.array(optimizer.gradient_norms)
+    print('Done Training')
 
     # Post-processing
-    x_axis = np.arrange(losses.size)
-    plt.plot(x_axis, losses, label='Training Loss')
-    plt.plot(x_axis, grad_norms, label='Gradient Norms')
+    x_axis = np.arange(len(losses))
+    plt.semilogy(x_axis, losses, label='Training Loss')
+    plt.semilogy(x_axis, grad_norms, label='Gradient Norms')
     plt.xlabel('Epoch')
     plt.legend()
     plt.show()

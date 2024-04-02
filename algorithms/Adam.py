@@ -8,8 +8,13 @@ class AdamOptimizer:
         self.beta2 = beta2
         self.epsilon = epsilon
 
+        # Keep history of training
         self.losses = []
         self.gradient_norms = []
+        self.n_iterations = 0
+
+    def setLearningRate(self, _learning_rate):
+        self.learning_rate = _learning_rate
 
     def optimize(self, f, df, x0, n_epochs=100, tolerance=1.e-8):
         x = np.copy(x0)
@@ -20,24 +25,23 @@ class AdamOptimizer:
 
         m = 0.0
         v = 0.0
-        n_iterations = 1
-        while n_iterations < n_epochs and lg.norm(g) > tolerance:
-            print('\nEpoch #', n_iterations)
+        while self.n_iterations < n_epochs and lg.norm(g) > tolerance:
+            print('\nEpoch #', self.n_iterations)
             m = self.beta1 * m + (1.0 - self.beta1) * g
             v = self.beta2 * v + (1.0 - self.beta2) * np.dot(g, g)
 
-            mp = m / (1.0 - self.beta1**n_iterations)
-            mv = v / (1.0 - self.beta2**n_iterations)
+            mp = m / (1.0 - self.beta1**(self.n_iterations+1))
+            mv = v / (1.0 - self.beta2**(self.n_iterations+1))
 
-            x = x - self.learning_rate * mp / (np.sqrt(mv + self.epsilon))
+            x = x - self.learning_rate * mp / (np.sqrt(mv) + self.epsilon)
             l = f(x)
             g = df(x)
 
             self.losses.append(l)
             self.gradient_norms.append(lg.norm(g))
-            n_iterations += 1
+            self.n_iterations += 1
             print('Loss =', l)
             print('Gradient Norm =', lg.norm(g))
 
-        print('\nAdam optimzer converged in', n_iterations, 'iterations! Final gradient norm =', lg.norm(g))
+        print('\nAdam Optimzer Converged in', self.n_iterations, 'Epochs! Final Loss =', l)
         return x
