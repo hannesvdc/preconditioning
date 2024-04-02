@@ -19,3 +19,11 @@ class CosineScheduler(Scheduler):
 
     def getLearningRate(self, epoch):
         return self.final_lr + 0.5*(self.initial_lr + self.final_lr) * (1.0 + np.cos(epoch * np.pi / self.T))
+    
+class PiecewiseConstantScheduler(Scheduler):
+    def __init__(self, rates):
+        self.rates = rates
+
+    def getLearningRate(self, epoch):
+        key = max(k for k in self.rates if k <= epoch)
+        return self.rates[key]
