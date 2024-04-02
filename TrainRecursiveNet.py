@@ -2,6 +2,7 @@ import autograd.numpy as np
 import autograd.numpy.linalg as lg
 import autograd.numpy.random as rd
 import matplotlib.pyplot as plt
+import scipy.optimize as opt
 
 from autograd import jacobian
 
@@ -9,8 +10,8 @@ import api.RecursiveNet as recnet
 import api.Scheduler as sch
 import algorithms.Adam as adam
 
-def trainRecNet():
-    # Generate the training data
+# General setup routine shared by all training routines
+def setupRecNet():
     N_data = 1000
     rng = rd.RandomState()
     A = np.array([[1.392232, 0.152829, 0.088680, 0.185377, 0.156244],
@@ -25,21 +26,26 @@ def trainRecNet():
     # Setup classes for training
     outer_iterations = 3
     inner_iterations = 4
-    learning_rate = 0.01
     net = recnet.R2N2(A, outer_iterations, inner_iterations, b)
     f = lambda w: net.loss(w)
     df = jacobian(f)
-    scheduler = sch.PiecewiseConstantScheduler({0: 0.01, 1000: 0.001, 5000: 1.e-4})
-    optimizer = adam.AdamOptimizer(f, df, scheduler, learning_rate=learning_rate) # Adam optimizer with standard parameters
-    # Setup the weights as a vector with 10 elements (not a lower-triangular matrix because we need to take gradients)
     n_weights = (inner_iterations * (inner_iterations + 1) ) // 2
     weights = rng.normal(size=n_weights)
+
+    return f, df, weights  
+
+def trainRecNetAdam():
+    f, df, weights = setupRecNet()
+    print('Initial Loss', f(weights))
+    print('Initial Loss Derivative', lg.norm(df(weights)))
+
+    # Setup the optimizer
+    scheduler = sch.PiecewiseConstantScheduler({0: 0.01, 1000: 0.001, 5000: 1.e-4})
+    optimizer = adam.AdamOptimizer(f, df, scheduler=scheduler)
     print('Initial weights', weights)
 
     # Do the training
     epochs = 10000
-    print('Initial Loss', f(weights))
-    print('Initial Loss Derivative', lg.norm(df(weights)))
     optimizer.optimize(weights, n_epochs=epochs)
     losses = np.array(optimizer.losses)
     grad_norms = np.array(optimizer.gradient_norms)
@@ -53,5 +59,32 @@ def trainRecNet():
     plt.legend()
     plt.show()
 
+def trainRecNetBFGS():
+    f, df, weights = setupRecNet()
+    print('Initial Loss', f(weights))
+    print('Initial Loss Derivative', lg.norm(df(weights)))
+
+    losses = []
+    grad_norms = []
+    def cb(result):
+        print('\nEpoch #', result.nit)
+        print('Loss =', result.fun)
+        print('Gradient Norm =', lg.norm(result.jac))
+        losses.append(result.fun)
+        grad_norms.append(lg.norm(result.jac))
+
+    epochs = 5000
+    result = opt.minimize(f, weights, jac=df, options={'maxiter': epochs}, callback=cb)
+    weights = result.x
+    print('Minimzed Loss', f(weights), df(weights))
+
+    # Post-processing
+    x_axis = np.arange(len(losses))
+    plt.semilogy(x_axis, losses, label='Training Loss')
+    plt.semilogy(x_axis, grad_norms, label='Gradient Norms')
+    plt.xlabel('Epoch')
+    plt.legend()
+    plt.show()
+
 if __name__ == '__main__':
-    trainRecNet()
+    trainRecNetAdam()

@@ -4,7 +4,7 @@ import numpy.linalg as lg
 from api.Scheduler import ConstantScheduler
 
 class AdamOptimizer:
-    def __init__(self, loss_fn, d_loss_fn, scheduler=None, beta1=0.9, beta2=0.99, epsilon=1.e-8):
+    def __init__(self, loss_fn, d_loss_fn, scheduler=ConstantScheduler(0.001), beta1=0.9, beta2=0.99, epsilon=1.e-8):
         self.f = loss_fn
         self.df = d_loss_fn
 
@@ -12,8 +12,6 @@ class AdamOptimizer:
         self.beta2 = beta2
         self.epsilon = epsilon
         self.scheduler = scheduler
-        if self.scheduler is None:
-            self.scheduler = ConstantScheduler(0.001) # Default learning rate
 
         # Keep history of training
         self.losses = []
