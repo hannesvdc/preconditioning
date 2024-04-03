@@ -8,35 +8,46 @@ class BFGSOptimizer:
         self.f = loss_fn
         self.df = d_loss_fn
         self.scheduler = scheduler
+        self.stability_threshold = 1.e-10
 
         # Keep history of training
         self.losses = []
         self.gradient_norms = []
 
-    def optimize(self, x0, n_epochs=100):
+    def optimize(self, x0, tolerance=1.e-6):
         x = np.copy(x0)
         l = self.f(x)
         g = self.df(x)
         self.losses.append(l)
         self.gradient_norms.append(lg.norm(g))
+        print('x =', x, g)
 
         n_iterations = 0
-        H = np.eye(len(x))
-        while n_iterations < n_epochs:
+        I = np.eye(x.size)
+        H = np.copy(I)
+        while lg.norm(g) >= tolerance:
             print('\nEpoch #', n_iterations)
             alpha = self.scheduler.getLearningRate(n_iterations)
 
             # Descent stepping
-            p = -np.dot(H, g)
-            xp = x + alpha * p
-            gp = self.df(x)
+            pk = -np.dot(H, g)
+            sk = alpha * pk
+
+            # Updating position and gradient
+            xp = x + sk
+            gp = self.df(xp)
 
             # BFGS update
-            s = xp - x
-            y = gp - g
-            denom = np.dot(s, y)
-            I = np.eye(len(s))
-            H = np.matmul(I - np.outer(s, y) / denom, np.matmul(H, I - np.outer(y, s) / denom)) + np.outer(s, s) / denoms
+            yk = gp - g
+            rhok_inv = np.dot(sk, yk)
+            if np.abs(rhok_inv) < self.stability_threshold:
+                print('Precision Loss in BFGS update. Asssuming rhok is large')
+                rhok = 1000.0
+            else:
+                rhok = 1.0 / rhok_inv
+            A1 = I - np.outer(sk, yk) * rhok
+            A2 = I - np.outer(yk, sk) * rhok
+            H = np.dot(A1, np.dot(H, A2)) + rhok * np.outer(sk, sk)
             
             # Keeping track of variables for next iteration
             x = np.copy(xp)
@@ -50,5 +61,5 @@ class BFGSOptimizer:
             print('Gradient Norm =', lg.norm(g))
             print('Weights =', x)
 
-        print('\BFGS Optimzer Converged in', n_iterations, 'Epochs! Final Loss =', l)
+        print('\nBFGS Optimzer Converged in', n_iterations, 'Epochs! Final Loss =', l)
         return x
