@@ -79,13 +79,13 @@ def trainRecNetBFGS():
         print('Weights', x)
 
     epochs = 5000
-    method = 'BFGS'
-    result = opt.minimize(f, weights, jac=df, tol=-1.e-16,
-                                              method=method, 
-                                              options={'maxiter': epochs, 'gtol': 1.e-16, 'ftol': 1.e-16}, 
+    method = 'L-BFGS-B'
+    result = opt.minimize(f, weights, jac=df, method=method,
+                                              options={'maxiter': epochs, 'gtol': 1.e-100}, 
                                               callback=callback)
     weights = result.x
     print('Minimzed Loss', f(weights), df(weights))
+    print('Minimization Result', result)
 
     # Post-processing
     x_axis = np.arange(len(losses))
