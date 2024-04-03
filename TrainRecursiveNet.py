@@ -66,15 +66,24 @@ def trainRecNetBFGS():
 
     losses = []
     grad_norms = []
-    def cb(result):
-        print('\nEpoch #', result.nit)
-        print('Loss =', result.fun)
-        print('Gradient Norm =', lg.norm(result.jac))
-        losses.append(result.fun)
-        grad_norms.append(lg.norm(result.jac))
+    epoch_counter = [0]
+    def callback(x):
+        print('\nEpoch #', epoch_counter[0])
+        l = f(x)
+        g = lg.norm(df(x))
+        losses.append(l)
+        grad_norms.append(g)
+        epoch_counter[0] += 1
+        print('Loss =', l)
+        print('Gradient Norm =', g)
+        print('Weights', x)
 
     epochs = 5000
-    result = opt.minimize(f, weights, jac=df, options={'maxiter': epochs}, callback=cb)
+    method = 'BFGS'
+    result = opt.minimize(f, weights, jac=df, tol=-1.e-16,
+                                              method=method, 
+                                              options={'maxiter': epochs, 'gtol': 1.e-16, 'ftol': 1.e-16}, 
+                                              callback=callback)
     weights = result.x
     print('Minimzed Loss', f(weights), df(weights))
 
@@ -83,8 +92,9 @@ def trainRecNetBFGS():
     plt.semilogy(x_axis, losses, label='Training Loss')
     plt.semilogy(x_axis, grad_norms, label='Gradient Norms')
     plt.xlabel('Epoch')
+    plt.title(method)
     plt.legend()
     plt.show()
 
 if __name__ == '__main__':
-    trainRecNetAdam()
+    trainRecNetBFGS()

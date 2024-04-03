@@ -46,6 +46,7 @@ class AdamOptimizer:
             n_iterations += 1
             print('Loss =', l)
             print('Gradient Norm =', lg.norm(g))
+            print('Weights =', x)
 
         print('\nAdam Optimzer Converged in', n_iterations, 'Epochs! Final Loss =', l)
         return x
