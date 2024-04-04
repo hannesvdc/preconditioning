@@ -20,29 +20,33 @@ class BFGSOptimizer:
         g = self.df(x)
         self.losses.append(l)
         self.gradient_norms.append(lg.norm(g))
-        print('x =', x, g)
 
         n_iterations = 0
         I = np.eye(x.size)
         H = np.copy(I)
-        while (tolerance is not None and lg.norm(g) >= tolerance) or (tolerance is None and n_iterations < maxiter):
+        for n_iterations in range(maxiter):
             print('\nEpoch #', n_iterations)
             alpha = self.scheduler.getLearningRate(n_iterations)
 
             # Descent stepping
             pk = -np.dot(H, g)
             sk = alpha * pk
-            print('pk', pk)
-            print('sk', sk)
 
             # Updating position and gradient
             xp = x + sk
+            lp = self.f(xp)
             gp = self.df(xp)
+            if not np.isfinite(lp):
+                print('Invalid Value Encountered. Aborting')
+                return xp
+            if tolerance is not None and lg.norm(gp) < tolerance:
+                print('\nBFGS Optimzer Converged in', n_iterations, 'Epochs! Final Loss =', lp)
+                return xp
 
             # BFGS update
             yk = gp - g
             rhok_inv = np.dot(sk, yk)
-            if np.abs(rhok_inv) < self.stability_threshold:
+            if rhok_inv == 0.0:
                 print('Precision Loss in BFGS update. Asssuming rhok is large. Rhok_inv =', rhok_inv)
                 rhok = 1000.0
             else:
@@ -52,9 +56,8 @@ class BFGSOptimizer:
             H = np.dot(A1, np.dot(H, A2)) + rhok * np.outer(sk, sk)
             
             # Keeping track of variables for next iteration
-            print('new x', xp, x, sk)
             x = np.copy(xp)
-            l = self.f(x)
+            l = lp
             g = np.copy(gp)
 
             self.losses.append(l)
@@ -64,5 +67,8 @@ class BFGSOptimizer:
             print('Gradient Norm =', lg.norm(g))
             print('Weights =', x)
 
-        print('\nBFGS Optimzer Converged in', n_iterations, 'Epochs! Final Loss =', l)
+        if tolerance is None:
+            print('\nBFGS Optimzer Converged in', n_iterations, 'Epochs! Final Loss =', l)
+        else:
+            print('Maximum Number of Iterations Reached. Returning Current Iterate.')
         return x

@@ -98,12 +98,13 @@ def trainRecNetBFGS():
     plt.legend()
     plt.show()
 
-def trainRecNetBFGS_impl(): # Train NN with own bfgs implementation
-    f, df, weights = setupRecNet()
+def refineRecNet(): # Train NN with own bfgs implementation
+    f, df, _ = setupRecNet()
+    
     print('Initial Loss', f(weights))
     print('Initial Loss Derivative', lg.norm(df(weights)))
 
-    learning_rate = 0.0001
+    learning_rate = 0.01
     optimizer = bfgs.BFGSOptimizer(f, df, scheduler=sch.ConstantScheduler(learning_rate))
 
     epochs = 5000
@@ -118,7 +119,7 @@ def trainRecNetBFGS_impl(): # Train NN with own bfgs implementation
     plt.semilogy(x_axis, losses, label='Training Loss')
     plt.semilogy(x_axis, grad_norms, label='Gradient Norms')
     plt.xlabel('Epoch')
-    plt.title('Own Implementation of BFGS with learning rate = ' + str(learning_rate))
+    plt.title('BFGS Refinement with learning rate = ' + str(learning_rate))
     plt.legend()
     plt.show()
 
