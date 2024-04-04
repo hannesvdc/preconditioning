@@ -9,6 +9,7 @@ from autograd import jacobian
 import api.RecursiveNet as recnet
 import api.Scheduler as sch
 import algorithms.Adam as adam
+import algorithms.BFGS as bfgs
 
 # General setup routine shared by all training routines
 def setupRecNet():
@@ -40,22 +41,23 @@ def trainRecNetAdam():
     print('Initial Loss Derivative', lg.norm(df(weights)))
 
     # Setup the optimizer
-    scheduler = sch.PiecewiseConstantScheduler({0: 0.01, 1000: 0.001, 5000: 1.e-4})
+    scheduler = sch.PiecewiseConstantScheduler({0: 0.01, 1000: 0.001, 5000: 1.e-4, 10000: 1.e-5})
     optimizer = adam.AdamOptimizer(f, df, scheduler=scheduler)
     print('Initial weights', weights)
 
     # Do the training
-    epochs = 10000
-    optimizer.optimize(weights, n_epochs=epochs)
+    epochs = 15000
+    weights = optimizer.optimize(weights, n_epochs=epochs)
     losses = np.array(optimizer.losses)
     grad_norms = np.array(optimizer.gradient_norms)
-    print('Done Training')
+    print('Done Training. Weights =', weights)
 
     # Post-processing
     x_axis = np.arange(len(losses))
     plt.semilogy(x_axis, losses, label='Training Loss')
     plt.semilogy(x_axis, grad_norms, label='Gradient Norms')
     plt.xlabel('Epoch')
+    plt.title('Adam')
     plt.legend()
     plt.show()
 
@@ -96,5 +98,29 @@ def trainRecNetBFGS():
     plt.legend()
     plt.show()
 
+def trainRecNetBFGS_impl(): # Train NN with own bfgs implementation
+    f, df, weights = setupRecNet()
+    print('Initial Loss', f(weights))
+    print('Initial Loss Derivative', lg.norm(df(weights)))
+
+    learning_rate = 0.0001
+    optimizer = bfgs.BFGSOptimizer(f, df, scheduler=sch.ConstantScheduler(learning_rate))
+
+    epochs = 5000
+    weights = optimizer.optimize(weights, maxiter=epochs)
+    losses = optimizer.losses
+    grad_norms = optimizer.gradient_norms
+    print('Weights', weights)
+    print('Minimzed Loss', f(weights), df(weights))
+
+    # Post-processing
+    x_axis = np.arange(len(losses))
+    plt.semilogy(x_axis, losses, label='Training Loss')
+    plt.semilogy(x_axis, grad_norms, label='Gradient Norms')
+    plt.xlabel('Epoch')
+    plt.title('Own Implementation of BFGS with learning rate = ' + str(learning_rate))
+    plt.legend()
+    plt.show()
+
 if __name__ == '__main__':
-    trainRecNetBFGS()
+    trainRecNetAdam()

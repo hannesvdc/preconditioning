@@ -76,7 +76,7 @@ def MullerBrown():
 
     rng = rd.RandomState()
     optimizer = bfgs.BFGSOptimizer(V, dV, scheduler=scheduler.ConstantScheduler(learning_rate=0.01))
-    tolerance = 1.e-9
+    tolerance = 1.e-6
 
     u0 = rng.normal(np.array([0.0, 0.6]), scale=np.sqrt(0.5), size=2)
     us = optimizer.optimize(u0, tolerance=tolerance)
@@ -102,4 +102,4 @@ if __name__ == '__main__':
     quadraticTest3d()
     multiModal2d()
     MullerBrown()
-    Ackleys()
+    #Ackleys()

@@ -14,7 +14,7 @@ class BFGSOptimizer:
         self.losses = []
         self.gradient_norms = []
 
-    def optimize(self, x0, tolerance=1.e-6):
+    def optimize(self, x0, tolerance=None, maxiter=100):
         x = np.copy(x0)
         l = self.f(x)
         g = self.df(x)
@@ -25,13 +25,15 @@ class BFGSOptimizer:
         n_iterations = 0
         I = np.eye(x.size)
         H = np.copy(I)
-        while lg.norm(g) >= tolerance:
+        while (tolerance is not None and lg.norm(g) >= tolerance) or (tolerance is None and n_iterations < maxiter):
             print('\nEpoch #', n_iterations)
             alpha = self.scheduler.getLearningRate(n_iterations)
 
             # Descent stepping
             pk = -np.dot(H, g)
             sk = alpha * pk
+            print('pk', pk)
+            print('sk', sk)
 
             # Updating position and gradient
             xp = x + sk
@@ -41,7 +43,7 @@ class BFGSOptimizer:
             yk = gp - g
             rhok_inv = np.dot(sk, yk)
             if np.abs(rhok_inv) < self.stability_threshold:
-                print('Precision Loss in BFGS update. Asssuming rhok is large')
+                print('Precision Loss in BFGS update. Asssuming rhok is large. Rhok_inv =', rhok_inv)
                 rhok = 1000.0
             else:
                 rhok = 1.0 / rhok_inv
@@ -50,6 +52,7 @@ class BFGSOptimizer:
             H = np.dot(A1, np.dot(H, A2)) + rhok * np.outer(sk, sk)
             
             # Keeping track of variables for next iteration
+            print('new x', xp, x, sk)
             x = np.copy(xp)
             l = self.f(x)
             g = np.copy(gp)
