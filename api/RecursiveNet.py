@@ -26,6 +26,18 @@ class R2N2:
 
         averaged_loss = total_loss / N
         return averaged_loss
+    
+    def forward(self, weights, b, n_outer_iterations=None):
+        x = np.zeros(self.M)
+        if n_outer_iterations is None:
+            n_outer_iterations = self.outer_iterations
+        
+        samples = []
+        for k in range(1, n_outer_iterations+1):
+            x = self.inner_forward(x, b, weights)
+            samples.append(x)
+
+        return samples
 
     def inner_forward(self, x, b, weights):
         V = np.array([-b]).transpose() # This is technically the first function evaluations, but we do not count it.

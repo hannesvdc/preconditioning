@@ -12,7 +12,9 @@ import algorithms.Adam as adam
 import algorithms.BFGS as bfgs
 
 # General setup routine shared by all training routines
-def setupRecNet():
+def setupRecNet(outer_iterations=3, inner_iterations=4):
+
+    # Sample Data
     N_data = 1000
     rng = rd.RandomState()
     A = np.array([[1.392232, 0.152829, 0.088680, 0.185377, 0.156244],
@@ -25,18 +27,25 @@ def setupRecNet():
     b = b_mean_repeated + rng.uniform(low=-1, high=1, size=(5, N_data))
 
     # Setup classes for training
-    outer_iterations = 3
-    inner_iterations = 4
     net = recnet.R2N2(A, outer_iterations, inner_iterations, b)
     f = lambda w: net.loss(w)
     df = jacobian(f)
-    n_weights = (inner_iterations * (inner_iterations + 1) ) // 2
-    weights = rng.normal(size=n_weights)
 
-    return f, df, weights  
+    return net, f, df
+
+def sampleWeights(net):
+    rng = rd.RandomState()
+    inner_iterations = net.inner_iterations
+    n_weights = (inner_iterations * (inner_iterations + 1) ) // 2
+
+    while True:
+        weights = rng.normal(size=n_weights)
+        if net.loss(weights) < 5000:
+            return weights
 
 def trainRecNetAdam():
-    f, df, weights = setupRecNet()
+    net, f, df = setupRecNet()
+    weights = sampleWeights(net)
     print('Initial Loss', f(weights))
     print('Initial Loss Derivative', lg.norm(df(weights)))
 
@@ -62,7 +71,8 @@ def trainRecNetAdam():
     plt.show()
 
 def trainRecNetBFGS():
-    f, df, weights = setupRecNet()
+    net, f, df = setupRecNet()
+    weights = sampleWeights(net)
     print('Initial Loss', f(weights))
     print('Initial Loss Derivative', lg.norm(df(weights)))
 
@@ -99,7 +109,8 @@ def trainRecNetBFGS():
     plt.show()
 
 def refineRecNet(): # Train NN with own bfgs implementation
-    f, df, _ = setupRecNet()
+    _, f, df = setupRecNet()
+    weights = np.load()
     
     print('Initial Loss', f(weights))
     print('Initial Loss Derivative', lg.norm(df(weights)))

@@ -21,13 +21,14 @@ class AdamOptimizer:
         x = np.copy(x0)
         l = self.f(x)
         g = self.df(x)
+        norm_g = lg.norm(g)
+
         self.losses.append(l)
-        self.gradient_norms.append(lg.norm(g))
+        self.gradient_norms.append(norm_g)
 
         m = 0.0
         v = 0.0
-        n_iterations = 0
-        while n_iterations < n_epochs and lg.norm(g) > tolerance:
+        for n_iterations in range(n_epochs):
             print('\nEpoch #', n_iterations)
             alpha = self.scheduler.getLearningRate(n_iterations)
 
@@ -40,13 +41,17 @@ class AdamOptimizer:
             x = x - alpha * mp / (np.sqrt(mv) + self.epsilon)
             l = self.f(x)
             g = self.df(x)
+            norm_g = lg.norm(g)
+
+            if norm_g < tolerance:
+                print('\nAdam Optimzer Converged in', n_iterations, 'Epochs! Final Loss =', l)
+                return x
 
             self.losses.append(l)
-            self.gradient_norms.append(lg.norm(g))
-            n_iterations += 1
+            self.gradient_norms.append(norm_g)
             print('Loss =', l)
-            print('Gradient Norm =', lg.norm(g))
+            print('Gradient Norm =', norm_g)
             print('Weights =', x)
 
-        print('\nAdam Optimzer Converged in', n_iterations, 'Epochs! Final Loss =', l)
+        print('\nAdam Optimzer Reached Maximum Number of Epochs ', n_epochs, '. Final Loss =', l)
         return x

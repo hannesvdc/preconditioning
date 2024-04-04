@@ -14,14 +14,13 @@ class BFGSOptimizer:
         self.losses = []
         self.gradient_norms = []
 
-    def optimize(self, x0, tolerance=None, maxiter=100):
+    def optimize(self, x0, tolerance=None, maxiter=1000):
         x = np.copy(x0)
         l = self.f(x)
         g = self.df(x)
         self.losses.append(l)
         self.gradient_norms.append(lg.norm(g))
 
-        n_iterations = 0
         I = np.eye(x.size)
         H = np.copy(I)
         for n_iterations in range(maxiter):
@@ -62,7 +61,6 @@ class BFGSOptimizer:
 
             self.losses.append(l)
             self.gradient_norms.append(lg.norm(g))
-            n_iterations += 1
             print('Loss =', l)
             print('Gradient Norm =', lg.norm(g))
             print('Weights =', x)
