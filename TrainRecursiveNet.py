@@ -50,12 +50,12 @@ def trainRecNetAdam():
     print('Initial Loss Derivative', lg.norm(df(weights)))
 
     # Setup the optimizer
-    scheduler = sch.PiecewiseConstantScheduler({0: 0.01, 1000: 0.001, 5000: 1.e-4, 10000: 1.e-5})
+    scheduler = sch.PiecewiseConstantScheduler({0: 0.1, 100: 0.01, 1000: 0.001, 5000: 1.e-4, 10000: 1.e-5, 15000: 1.e-6})
     optimizer = adam.AdamOptimizer(f, df, scheduler=scheduler)
     print('Initial weights', weights)
 
     # Do the training
-    epochs = 15000
+    epochs = 20000
     weights = optimizer.optimize(weights, n_epochs=epochs)
     losses = np.array(optimizer.losses)
     grad_norms = np.array(optimizer.gradient_norms)
@@ -110,16 +110,18 @@ def trainRecNetBFGS():
 
 def refineRecNet(): # Train NN with own bfgs implementation
     _, f, df = setupRecNet()
-    weights = np.load()
+    weights = np.array([-0.01424995, -0.01421451, -0.88593378, -0.01427751,  0.86512796  ,
+                        1.39955378,  -0.01422662, -2.53569552, -1.6169461,   0.84363141]) # Adam Weights
     
     print('Initial Loss', f(weights))
     print('Initial Loss Derivative', lg.norm(df(weights)))
 
-    learning_rate = 0.01
+    learning_rate = 0.001
     optimizer = bfgs.BFGSOptimizer(f, df, scheduler=sch.ConstantScheduler(learning_rate))
 
     epochs = 5000
-    weights = optimizer.optimize(weights, maxiter=epochs)
+    tolerance = 1.e-8
+    weights = optimizer.optimize(weights, maxiter=epochs, tolerance=tolerance)
     losses = optimizer.losses
     grad_norms = optimizer.gradient_norms
     print('Weights', weights)
@@ -135,4 +137,4 @@ def refineRecNet(): # Train NN with own bfgs implementation
     plt.show()
 
 if __name__ == '__main__':
-    trainRecNetAdam()
+    refineRecNet()

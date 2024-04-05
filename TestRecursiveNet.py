@@ -28,7 +28,8 @@ def testRecNet():
     b = b_mean_repeated + rng.uniform(low=-1, high=1, size=(5, N_data))
 
     # Run each rhs through the neural network
-    n_outer_iterations = 5 # Does not need be the same as the number the network was trained on.
+    n_outer_iterations = 10 # Does not need be the same as the number the network was trained on.
+    n_inner_iterations = 3
     errors = np.zeros((N_data, n_outer_iterations+1))
     for n in range(N_data):
         rhs = b[:,n]
@@ -45,7 +46,7 @@ def testRecNet():
         gmres_errors[n,0] = lg.norm(rhs)
 
         for k in range(1, n_outer_iterations+1):
-            x, _ = slg.gmres(A, rhs, x0=np.zeros(rhs.size), maxiter=k, restart=3)
+            x, _ = slg.gmres(A, rhs, x0=np.zeros(rhs.size), maxiter=k, restart=n_inner_iterations, tol=0.0)
             gmres_errors[n,k] = lg.norm(A.dot(x) - rhs)
 
     # Average the errors

@@ -40,11 +40,11 @@ class R2N2:
         return samples
 
     def inner_forward(self, x, b, weights):
-        V = np.array([-b]).transpose() # This is technically the first function evaluations, but we do not count it.
+        V = np.array([self.f(x, b)]).transpose() # v_0
 
         for n in range(1, self.inner_iterations): # do inner_iterations-1 function evaluations
             xp = self._N(x, V, n, weights)
-            v = self.f(xp, b)
+            v = self.f(xp, b) # v_n
             V = np.append(V, np.array([v]).transpose(), axis=1)
 
         return self._N(x, V, self.inner_iterations, weights) # Does this need to be xp? Think!
