@@ -28,11 +28,11 @@ class R2N2:
         return averaged_loss
     
     def forward(self, weights, b, n_outer_iterations=None):
-        x = np.zeros(self.M)
+        x = np.zeros_like(b)
         if n_outer_iterations is None:
             n_outer_iterations = self.outer_iterations
         
-        samples = []
+        samples = [x]
         for k in range(1, n_outer_iterations+1):
             x = self.inner_forward(x, b, weights)
             samples.append(x)

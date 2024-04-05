@@ -63,8 +63,8 @@ def trainRecNetAdam():
 
     # Post-processing
     x_axis = np.arange(len(losses))
-    plt.semilogy(x_axis, losses, label='Training Loss')
     plt.semilogy(x_axis, grad_norms, label='Gradient Norms')
+    plt.semilogy(x_axis, losses, label='Training Loss')
     plt.xlabel('Epoch')
     plt.title('Adam')
     plt.legend()
@@ -101,8 +101,8 @@ def trainRecNetBFGS():
 
     # Post-processing
     x_axis = np.arange(len(losses))
-    plt.semilogy(x_axis, losses, label='Training Loss')
     plt.semilogy(x_axis, grad_norms, label='Gradient Norms')
+    plt.semilogy(x_axis, losses, label='Training Loss')
     plt.xlabel('Epoch')
     plt.title(method)
     plt.legend()
@@ -127,8 +127,8 @@ def refineRecNet(): # Train NN with own bfgs implementation
 
     # Post-processing
     x_axis = np.arange(len(losses))
-    plt.semilogy(x_axis, losses, label='Training Loss')
     plt.semilogy(x_axis, grad_norms, label='Gradient Norms')
+    plt.semilogy(x_axis, losses, label='Training Loss')
     plt.xlabel('Epoch')
     plt.title('BFGS Refinement with learning rate = ' + str(learning_rate))
     plt.legend()
