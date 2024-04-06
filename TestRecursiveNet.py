@@ -10,10 +10,8 @@ from TrainRecursiveNet import setupRecNet
 def testRecNet():
     # Setup the network and load the weights
     net, _, _ = setupRecNet()
-    weights = np.array([-0.72235694, -0.59516159 ,-1.24899122 ,-0.8073451  , 0.95749325 , 1.49430723,
-                        -0.60988368, -2.74317737, -2.02663524 , 0.90252931]) # Adam + BFGS refinement
-    #weights = np.array([-0.01424995, -0.01421451, -0.88593378, -0.01427751,  0.86512796  ,
-    #                    1.39955378,  -0.01422662, -2.53569552, -1.6169461,   0.84363141]) # Adam Weights
+    weights = np.array([-0.73737268, -0.61477415 ,-1.27653059 ,-0.81336888 , 0.96343624 , 1.50807421,
+                        -0.63605583 ,-2.76632652, -2.06018977 , 0.91142757]) # Adam + BFGS refinement
     
     # Generate test data. Same distribution as training data. Test actual training data next
     N_data = 1000
@@ -40,14 +38,22 @@ def testRecNet():
             errors[n,k] = err
 
     # Solve the system Ax = rhs with gmres for all rhs
+    class fc_eval:
+        def __init__(self):
+            self.func_vals = 0
+        def cb(self,input):
+            self.func_vals += 1
+
     gmres_errors = np.zeros((N_data, n_outer_iterations+1))
     for n in range(N_data):
         rhs = b[:,n]
         gmres_errors[n,0] = lg.norm(rhs)
 
         for k in range(1, n_outer_iterations+1):
-            x, _ = slg.gmres(A, rhs, x0=np.zeros(rhs.size), maxiter=k, restart=n_inner_iterations, tol=0.0)
+            evaluator = fc_eval()
+            x, _ = slg.gmres(A, rhs, x0=np.zeros(rhs.size), maxiter=k, restart=n_inner_iterations, tol=0.0, callback=evaluator.cb, callback_type='pr_norm')
             gmres_errors[n,k] = lg.norm(A.dot(x) - rhs)
+            print('Number of Inner Iterations', evaluator.func_vals, k)
 
     # Average the errors
     avg_errors = np.average(errors, axis=0)
