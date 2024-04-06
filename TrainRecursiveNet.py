@@ -110,16 +110,16 @@ def trainRecNetBFGS():
 
 def refineRecNet(): # Train NN with own bfgs implementation
     _, f, df = setupRecNet()
-    weights = np.array([-0.01424995, -0.01421451, -0.88593378, -0.01427751,  0.86512796  ,
-                        1.39955378,  -0.01422662, -2.53569552, -1.6169461,   0.84363141]) # Adam Weights
+    weights = np.array([-0.69173948, -0.57771731 ,-1.20985216 ,-0.78969468 , 0.93665498 , 1.48918323,
+                        -0.57242779, -2.72364362 ,-1.9727155  , 0.89240294]) # Adam + already BFGS refined weights
     
     print('Initial Loss', f(weights))
     print('Initial Loss Derivative', lg.norm(df(weights)))
 
-    learning_rate = 0.001
-    optimizer = bfgs.BFGSOptimizer(f, df, scheduler=sch.ConstantScheduler(learning_rate))
+    learning_rate = 1.e-3
+    optimizer = bfgs.BFGSOptimizer(f, df, sch.PiecewiseConstantScheduler({0: learning_rate}))
 
-    epochs = 5000
+    epochs = 1000
     tolerance = 1.e-8
     weights = optimizer.optimize(weights, maxiter=epochs, tolerance=tolerance)
     losses = optimizer.losses

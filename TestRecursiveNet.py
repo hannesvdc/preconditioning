@@ -2,6 +2,7 @@ import numpy as np
 import numpy.linalg as lg
 import numpy.random as rd
 import scipy.sparse.linalg as slg
+import matplotlib
 import matplotlib.pyplot as plt
 
 from TrainRecursiveNet import setupRecNet
@@ -9,11 +10,10 @@ from TrainRecursiveNet import setupRecNet
 def testRecNet():
     # Setup the network and load the weights
     net, _, _ = setupRecNet()
-    #weights = np.array([-5.29079523e-02, -4.26651859e-02, -7.89517538e+00,  9.57357343e-01,
-    #                    -6.60445132e-01,  9.73932767e+01, -5.17671502e-02, -2.90171257e+00,
-    #                    -4.06082443e-01,  1.35692637e-03]) # BFGS weights
-    weights = np.array([-0.01424995, -0.01421451, -0.88593378, -0.01427751,  0.86512796  ,
-                        1.39955378,  -0.01422662, -2.53569552, -1.6169461,   0.84363141]) # Adam Weights
+    weights = np.array([-0.72235694, -0.59516159 ,-1.24899122 ,-0.8073451  , 0.95749325 , 1.49430723,
+                        -0.60988368, -2.74317737, -2.02663524 , 0.90252931]) # Adam + BFGS refinement
+    #weights = np.array([-0.01424995, -0.01421451, -0.88593378, -0.01427751,  0.86512796  ,
+    #                    1.39955378,  -0.01422662, -2.53569552, -1.6169461,   0.84363141]) # Adam Weights
     
     # Generate test data. Same distribution as training data. Test actual training data next
     N_data = 1000
@@ -29,7 +29,7 @@ def testRecNet():
 
     # Run each rhs through the neural network
     n_outer_iterations = 10 # Does not need be the same as the number the network was trained on.
-    n_inner_iterations = 3
+    n_inner_iterations = 4
     errors = np.zeros((N_data, n_outer_iterations+1))
     for n in range(N_data):
         rhs = b[:,n]
@@ -54,12 +54,17 @@ def testRecNet():
     avg_gmres_ = np.average(gmres_errors, axis=0)
 
     # Plot the errors
+    fig, ax = plt.subplots()  
     k_axis = np.linspace(0, n_outer_iterations, n_outer_iterations+1)
+    rect = matplotlib.patches.Rectangle((net.outer_iterations+0.5, 1.e-16), 7.5, 70, color='gray', alpha=0.2)
+    ax.add_patch(rect)
     plt.semilogy(k_axis, avg_errors, label='R2N2 Test Error', linestyle='--', marker='d')
     plt.semilogy(k_axis, avg_gmres_, label='GMRES Error', linestyle='-', marker='^')
     plt.xticks(np.linspace(0, n_outer_iterations, n_outer_iterations+1))
     plt.xlabel(r'# Outer Iterations')
     plt.ylabel('Error')
+    plt.xlim((-0.5, 10.5))
+    plt.ylim((1.e-16, 70))
     plt.legend()
     plt.show()
 
