@@ -12,7 +12,7 @@ import algorithms.Adam as adam
 import algorithms.BFGS as bfgs
 
 # General setup routine shared by all training routines
-def setupRecNet(outer_iterations=3, inner_iterations=4):
+def setupRecNet(outer_iterations=3, inner_iterations=4, baseweight=4.0):
 
     # Sample Data
     N_data = 1000
@@ -27,7 +27,7 @@ def setupRecNet(outer_iterations=3, inner_iterations=4):
     b = b_mean_repeated + rng.uniform(low=-1, high=1, size=(5, N_data))
 
     # Setup classes for training
-    net = recnet.R2N2(A, outer_iterations, inner_iterations, b)
+    net = recnet.R2N2(A, outer_iterations, inner_iterations, b, baseweight=baseweight)
     f = lambda w: net.loss(w)
     df = jacobian(f)
 
@@ -71,8 +71,10 @@ def trainRecNetAdam():
     plt.show()
 
 def trainRecNetBFGS():
-    net, f, df = setupRecNet()
-    weights = sampleWeights(net)
+    net, f, df = setupRecNet(outer_iterations=3, inner_iterations=4, baseweight=4.0)
+    weights = np.array([-0.7456334 , -0.66502658, -1.29739056 ,-0.84211183 , 0.92645706 , 1.51624387,
+                        -0.63238672, -2.80202207, -2.03086615,  0.89698404]) # Adam + BFGS refinement for outer = 3, inner = 4
+    #weights = sampleWeights(net)
     print('Initial Loss', f(weights))
     print('Initial Loss Derivative', lg.norm(df(weights)))
 
@@ -91,7 +93,7 @@ def trainRecNetBFGS():
         print('Weights', x)
 
     epochs = 5000
-    method = 'L-BFGS-B'
+    method = 'BFGS'
     result = opt.minimize(f, weights, jac=df, method=method,
                                               options={'maxiter': epochs, 'gtol': 1.e-100}, 
                                               callback=callback)
@@ -109,14 +111,14 @@ def trainRecNetBFGS():
     plt.show()
 
 def refineRecNet(): # Train NN with own bfgs implementation
-    _, f, df = setupRecNet()
-    weights = np.array([-0.72235694, -0.59516159 ,-1.24899122 ,-0.8073451  , 0.95749325 , 1.49430723,
-                        -0.60988368, -2.74317737, -2.02663524 , 0.90252931]) # Adam + BFGS refinement
+    _, f, df = setupRecNet(outer_iterations=6, inner_iterations=4, baseweight=4.0)
+    weights = np.array([-0.7456334 , -0.66502658, -1.29739056 ,-0.84211183 , 0.92645706 , 1.51624387,
+                        -0.63238672, -2.80202207, -2.03086615,  0.89698404]) # Adam + BFGS refinement for outer = 3, inner = 4
     
     print('Initial Loss', f(weights))
     print('Initial Loss Derivative', lg.norm(df(weights)))
 
-    learning_rate = 1.e-2
+    learning_rate = 1.e-3
     optimizer = bfgs.BFGSOptimizer(f, df, sch.PiecewiseConstantScheduler({0: learning_rate}))
 
     epochs = 1000

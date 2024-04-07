@@ -2,7 +2,7 @@ import autograd.numpy as np
 import autograd.numpy.linalg as lg
 
 class R2N2:
-    def __init__(self, A, outer_iterations, inner_iterations, data):
+    def __init__(self, A, outer_iterations, inner_iterations, data, baseweight=4.0):
         self.A = A
         self.f = lambda x, b: np.dot(A, x) - b
         self.M = self.A.shape[0]
@@ -10,6 +10,8 @@ class R2N2:
         self.outer_iterations = outer_iterations
         self.inner_iterations = inner_iterations
         self.data = data # Matrix with b_i as columns
+
+        self.baseweight = baseweight
 
     def loss(self, weights): # Weights is a vector with n_inner * (n_inner+1) // 2 elements
         total_loss = 0.0
@@ -20,7 +22,7 @@ class R2N2:
             b = self.data[:,n]
             
             for k in range(1, self.outer_iterations+1):
-                loss_weight = 4.0**k
+                loss_weight = self.baseweight**k
                 x = self.inner_forward(x, b, weights)
                 total_loss += loss_weight * lg.norm(self.f(x, b))**2
 
@@ -47,7 +49,7 @@ class R2N2:
             v = self.f(xp, b) # v_n
             V = np.append(V, np.array([v]).transpose(), axis=1)
 
-        return self._N(x, V, self.inner_iterations, weights) # Does this need to be xp? Think!
+        return self._N(x, V, self.inner_iterations, weights)
     
     def _N(self, x, V, n, weights):
         lower_index = ( (n-1) * n ) // 2

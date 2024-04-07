@@ -10,8 +10,8 @@ from TrainRecursiveNet import setupRecNet
 def testRecNet():
     # Setup the network and load the weights
     net, _, _ = setupRecNet()
-    weights = np.array([-0.73737268, -0.61477415 ,-1.27653059 ,-0.81336888 , 0.96343624 , 1.50807421,
-                        -0.63605583 ,-2.76632652, -2.06018977 , 0.91142757]) # Adam + BFGS refinement
+    weights = np.array([-0.74134168, -0.66084462, -1.29037057, -0.84025678 , 0.92417759,  1.51284442,
+                        -0.62563371 ,-2.79681493 ,-2.02218361,  0.89389006]) # Adam + BFGS refinement
     
     # Generate test data. Same distribution as training data. Test actual training data next
     N_data = 1000
@@ -53,7 +53,7 @@ def testRecNet():
             evaluator = fc_eval()
             x, _ = slg.gmres(A, rhs, x0=np.zeros(rhs.size), maxiter=k, restart=n_inner_iterations, tol=0.0, callback=evaluator.cb, callback_type='pr_norm')
             gmres_errors[n,k] = lg.norm(A.dot(x) - rhs)
-            print('Number of Inner Iterations', evaluator.func_vals, k)
+            #print('Number of Inner Iterations', evaluator.func_vals, k)
 
     # Average the errors
     avg_errors = np.average(errors, axis=0)
