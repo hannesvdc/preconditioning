@@ -71,7 +71,7 @@ def trainRecNetAdam():
     plt.show()
 
 def trainRecNetBFGS():
-    net, f, df = setupRecNet(outer_iterations=3, inner_iterations=4, baseweight=4.0)
+    net, f, df = setupRecNet(outer_iterations=3, inner_iterations=4)
     weights = np.array([-0.7456334 , -0.66502658, -1.29739056 ,-0.84211183 , 0.92645706 , 1.51624387,
                         -0.63238672, -2.80202207, -2.03086615,  0.89698404]) # Adam + BFGS refinement for outer = 3, inner = 4
     #weights = sampleWeights(net)
@@ -111,9 +111,9 @@ def trainRecNetBFGS():
     plt.show()
 
 def refineRecNet(): # Train NN with own bfgs implementation
-    _, f, df = setupRecNet(outer_iterations=6, inner_iterations=4, baseweight=4.0)
-    weights = np.array([-0.7456334 , -0.66502658, -1.29739056 ,-0.84211183 , 0.92645706 , 1.51624387,
-                        -0.63238672, -2.80202207, -2.03086615,  0.89698404]) # Adam + BFGS refinement for outer = 3, inner = 4
+    _, f, df = setupRecNet(outer_iterations=3, inner_iterations=4)
+    weights = np.array([-0.74434391 ,-0.6786015 , -1.27745095 ,-0.81440079 , 0.8572105 ,  1.45967146,
+                         -0.66222576 ,-2.75632445, -2.00459113,  0.90600585]) # Adam + BFGS refinement for outer = 3, inner = 4
     
     print('Initial Loss', f(weights))
     print('Initial Loss Derivative', lg.norm(df(weights)))
@@ -121,7 +121,7 @@ def refineRecNet(): # Train NN with own bfgs implementation
     learning_rate = 1.e-3
     optimizer = bfgs.BFGSOptimizer(f, df, sch.PiecewiseConstantScheduler({0: learning_rate}))
 
-    epochs = 1000
+    epochs = 5000
     tolerance = 1.e-8
     weights = optimizer.optimize(weights, maxiter=epochs, tolerance=tolerance)
     losses = optimizer.losses

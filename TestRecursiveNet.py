@@ -10,8 +10,8 @@ from TrainRecursiveNet import setupRecNet
 def testRecNet():
     # Setup the network and load the weights
     net, _, _ = setupRecNet()
-    weights = np.array([-0.74134168, -0.66084462, -1.29037057, -0.84025678 , 0.92417759,  1.51284442,
-                        -0.62563371 ,-2.79681493 ,-2.02218361,  0.89389006]) # Adam + BFGS refinement
+    weights = np.array([-0.75316096, -0.69427275, -1.27901581, -0.80982128  ,0.87691821 , 1.47827705,
+                         -0.69075924 ,-2.74992657 ,-2.00275799 , 0.9016705 ]) # Adam + BFGS refinement
     
     # Generate test data. Same distribution as training data. Test actual training data next
     N_data = 1000
