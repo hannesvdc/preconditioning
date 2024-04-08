@@ -11,25 +11,46 @@ import api.Scheduler as sch
 import algorithms.Adam as adam
 import algorithms.BFGS as bfgs
 
-# General setup routine shared by all training routines
-def setupRecNet(outer_iterations=3, inner_iterations=4, baseweight=4.0):
+def is_pos_def(B):
+    return np.all(lg.eigvals(B) > 0)
 
+def generateData():
     # Sample Data
     N_data = 1000
     rng = rd.RandomState()
+    b_mean = np.array([2.483570, -0.691321, 3.238442, 7.615149, -1.170766])
+    b_mean_repeated = np.array([b_mean,]*N_data).transpose()
+    b = b_mean_repeated + rng.uniform(low=-1, high=1, size=(5, N_data))
+
     A_mean = np.array([[1.392232, 0.152829, 0.088680, 0.185377, 0.156244],
                        [0.152829, 1.070883, 0.020994, 0.068940, 0.141251],
                        [0.088680, 0.020994, 0.910692,-0.222769, 0.060267],
                        [0.185377, 0.068940,-0.222769, 0.833275, 0.058072],
                        [0.156244, 0.141251, 0.060267, 0.058072, 0.735495]])
-    A_mean_repeated = np.repeat(A_mean[:, :, np.newaxis], N_data, axis=2)
-    A = A_mean_repeated + rng.uniform(low=-1, high=1, size=(5, 5, N_data))
-    b_mean = np.array([2.483570, -0.691321, 3.238442, 7.615149, -1.170766])
-    b_mean_repeated = np.array([b_mean,]*N_data).transpose()
-    b = b_mean_repeated + rng.uniform(low=-1, high=1, size=(5, N_data))
+    A = np.zeros((5, 5, N_data))
+    for n in range(N_data):
+        M = A_mean + rng.uniform(low=-1, high=1, size=(5, 5))
+        M = 0.5*(M + M.transpose()) + 5.0*np.eye(5)
+        all_pos_def = (all_pos_def and is_pos_def(M))
+        A[:,:,n] = np.copy(M)
+
+    # Save the Training Data once and for all
+    directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/R2N2/'
+    A_filename = 'A_Training_Data.npy'
+    b_filename = 'b_Training_Data.npy'
+    np.save(directory + A_filename, A)
+    np.save(directory + b_filename, b)
+
+# General setup routine shared by all training routines
+def setupRecNet(outer_iterations=3, inner_iterations=4, baseweight=4.0):
+    directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/R2N2/'
+    A_filename = 'A_Training_Data.npy'
+    b_filename = 'b_Training_Data.npy'
+    A_data = np.load(directory + A_filename)
+    b_data = np.load(directory + b_filename)
 
     # Setup classes for training
-    net = recnet.R2N2(A, b, outer_iterations, inner_iterations, baseweight=baseweight)
+    net = recnet.R2N2(A_data, b_data, outer_iterations, inner_iterations, baseweight=baseweight)
     f = lambda w: net.loss(w)
     df = jacobian(f)
 
@@ -43,17 +64,17 @@ def sampleWeights(net):
     while True:
         weights = rng.normal(size=n_weights)
         loss = net.loss(weights)
-        if loss < 100000:
+        if loss < 1.e9:
             return weights
 
 def trainRecNetAdam():
-    net, f, df = setupRecNet()
+    net, f, df = setupRecNet(outer_iterations=3, inner_iterations=4)
     weights = sampleWeights(net)
     print('Initial Loss', f(weights))
     print('Initial Loss Derivative', lg.norm(df(weights)))
 
     # Setup the optimizer
-    scheduler = sch.PiecewiseConstantScheduler({0: 0.01, 1000: 0.001, 5000: 1.e-4, 10000: 1.e-5, 15000: 1.e-6})
+    scheduler = sch.PiecewiseConstantScheduler({0: 0.001, 1000: 0.001, 5000: 1.e-4, 10000: 1.e-5, 15000: 1.e-6})
     optimizer = adam.AdamOptimizer(f, df, scheduler=scheduler)
     print('Initial weights', weights)
 
@@ -75,9 +96,7 @@ def trainRecNetAdam():
 
 def trainRecNetBFGS():
     net, f, df = setupRecNet(outer_iterations=3, inner_iterations=4)
-    weights = np.array([-0.7456334 , -0.66502658, -1.29739056 ,-0.84211183 , 0.92645706 , 1.51624387,
-                        -0.63238672, -2.80202207, -2.03086615,  0.89698404]) # Adam + BFGS refinement for outer = 3, inner = 4
-    #weights = sampleWeights(net)
+    weights = sampleWeights(net)
     print('Initial Loss', f(weights))
     print('Initial Loss Derivative', lg.norm(df(weights)))
 
@@ -113,15 +132,13 @@ def trainRecNetBFGS():
     plt.legend()
     plt.show()
 
-def refineRecNet(): # Train NN with own bfgs implementation
-    _, f, df = setupRecNet(outer_iterations=3, inner_iterations=4)
-    weights = np.array([-0.74434391 ,-0.6786015 , -1.27745095 ,-0.81440079 , 0.8572105 ,  1.45967146,
-                         -0.66222576 ,-2.75632445, -2.00459113,  0.90600585]) # Adam + BFGS refinement for outer = 3, inner = 4
-    
+def trainRecNetBFGSImpl(): # Train NN with own bfgs implementation
+    net, f, df = setupRecNet(outer_iterations=3, inner_iterations=4)
+    weights = sampleWeights(net)
     print('Initial Loss', f(weights))
     print('Initial Loss Derivative', lg.norm(df(weights)))
 
-    learning_rate = 1.e-3
+    learning_rate = 1.e-4
     optimizer = bfgs.BFGSOptimizer(f, df, sch.PiecewiseConstantScheduler({0: learning_rate}))
 
     epochs = 5000

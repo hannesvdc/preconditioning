@@ -22,7 +22,7 @@ class R2N2:
             A = self.A_data[:,:,n]
             b = self.b_data[:,n]
             
-            for k in range(1, self.outer_iterations+1):
+            for k in range(1, self.outer_iterations+1): # do self.outer_iterations iterations
                 loss_weight = self.baseweight**k
                 x = self.inner_forward(x, A, b, weights)
                 total_loss += loss_weight * lg.norm(self.f(x, A, b))**2

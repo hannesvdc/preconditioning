@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 from TrainRecursiveNet import setupRecNet
 
-def testRecNet():
+def testbRecNet():
     # Setup the network and load the weights
     net, _, _ = setupRecNet()
     weights = np.array([-0.75316096, -0.69427275, -1.27901581, -0.80982128  ,0.87691821 , 1.47827705,
@@ -74,6 +74,64 @@ def testRecNet():
     plt.legend()
     plt.show()
 
+def testAbRecNet():
+    # Setup the network and load the weights
+    net, _, _ = setupRecNet()
+    weights = np.array([ 0.10268829 , 0.42956351 ,-0.20035039  ,0.60186009, -1.54854183 ,-0.24866913,
+                         -0.21354488 , 0.56251621 ,-0.49080971 ,-0.02744335]) # Adam weights with random A and b
+    
+    # Load training data
+    directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/R2N2/'
+    A_filename = 'A_Training_Data.npy'
+    b_filename = 'b_Training_Data.npy'
+    A_data = np.load(directory + A_filename)
+    b_data = np.load(directory + b_filename)
+    N_data = A_data.shape[2]
+
+    # Run each rhs through the neural network
+    n_outer_iterations = 10 # Does not need be the same as the number the network was trained on.
+    n_inner_iterations = 4
+    errors = np.zeros((N_data, n_outer_iterations+1))
+    for n in range(N_data):
+        A = A_data[:,:,n]
+        rhs = b_data[:,n]
+        samples = net.forward(weights, A, rhs, n_outer_iterations)
+
+        for k in range(len(samples)):
+            err = lg.norm(A.dot(samples[k]) - rhs)
+            errors[n,k] = err
+
+    # Solve the system Ax = rhs with gmres for all A and rhs
+    gmres_errors = np.zeros((N_data, n_outer_iterations+1))
+    for n in range(N_data):
+        A = A_data[:,:,n]
+        rhs = b_data[:,n]
+        gmres_errors[n,0] = lg.norm(rhs)
+
+        for k in range(1, n_outer_iterations+1):
+            x, _ = slg.gmres(A, rhs, x0=np.zeros(rhs.size), maxiter=k, restart=n_inner_iterations, tol=0.0)
+            gmres_errors[n,k] = lg.norm(A.dot(x) - rhs)
+        print('gmres error', gmres_errors[n,n_outer_iterations], errors[n,n_outer_iterations])
+
+    # Average the errors
+    avg_errors = np.average(errors, axis=0)
+    avg_gmres_ = np.average(gmres_errors, axis=0)
+
+    # Plot the errors
+    fig, ax = plt.subplots()  
+    k_axis = np.linspace(0, n_outer_iterations, n_outer_iterations+1)
+    rect = matplotlib.patches.Rectangle((net.outer_iterations+0.5, 1.e-16), 7.5, 70, color='gray', alpha=0.2)
+    ax.add_patch(rect)
+    plt.semilogy(k_axis, avg_errors, label='R2N2 Test Error', linestyle='--', marker='d')
+    plt.semilogy(k_axis, avg_gmres_, label='GMRES Error', linestyle='-', marker='^')
+    plt.xticks(np.linspace(0, n_outer_iterations, n_outer_iterations+1))
+    plt.xlabel(r'# Outer Iterations')
+    plt.ylabel('Error')
+    plt.xlim((-0.5, 10.5))
+    plt.ylim((1.e-16, 70))
+    plt.legend()
+    plt.show()
+
 if __name__ == '__main__':
-    testRecNet()
+    testAbRecNet()
 
