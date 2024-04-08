@@ -17,17 +17,19 @@ def setupRecNet(outer_iterations=3, inner_iterations=4, baseweight=4.0):
     # Sample Data
     N_data = 1000
     rng = rd.RandomState()
-    A = np.array([[1.392232, 0.152829, 0.088680, 0.185377, 0.156244],
-                  [0.152829, 1.070883, 0.020994, 0.068940, 0.141251],
-                  [0.088680, 0.020994, 0.910692,-0.222769, 0.060267],
-                  [0.185377, 0.068940,-0.222769, 0.833275, 0.058072],
-                  [0.156244, 0.141251, 0.060267, 0.058072, 0.735495]])
+    A_mean = np.array([[1.392232, 0.152829, 0.088680, 0.185377, 0.156244],
+                       [0.152829, 1.070883, 0.020994, 0.068940, 0.141251],
+                       [0.088680, 0.020994, 0.910692,-0.222769, 0.060267],
+                       [0.185377, 0.068940,-0.222769, 0.833275, 0.058072],
+                       [0.156244, 0.141251, 0.060267, 0.058072, 0.735495]])
+    A_mean_repeated = np.repeat(A_mean[:, :, np.newaxis], N_data, axis=2)
+    A = A_mean_repeated + rng.uniform(low=-1, high=1, size=(5, 5, N_data))
     b_mean = np.array([2.483570, -0.691321, 3.238442, 7.615149, -1.170766])
     b_mean_repeated = np.array([b_mean,]*N_data).transpose()
     b = b_mean_repeated + rng.uniform(low=-1, high=1, size=(5, N_data))
 
     # Setup classes for training
-    net = recnet.R2N2(A, outer_iterations, inner_iterations, b, baseweight=baseweight)
+    net = recnet.R2N2(A, b, outer_iterations, inner_iterations, baseweight=baseweight)
     f = lambda w: net.loss(w)
     df = jacobian(f)
 
@@ -40,7 +42,8 @@ def sampleWeights(net):
 
     while True:
         weights = rng.normal(size=n_weights)
-        if net.loss(weights) < 5000:
+        loss = net.loss(weights)
+        if loss < 100000:
             return weights
 
 def trainRecNetAdam():
@@ -50,7 +53,7 @@ def trainRecNetAdam():
     print('Initial Loss Derivative', lg.norm(df(weights)))
 
     # Setup the optimizer
-    scheduler = sch.PiecewiseConstantScheduler({0: 0.1, 100: 0.01, 1000: 0.001, 5000: 1.e-4, 10000: 1.e-5, 15000: 1.e-6})
+    scheduler = sch.PiecewiseConstantScheduler({0: 0.01, 1000: 0.001, 5000: 1.e-4, 10000: 1.e-5, 15000: 1.e-6})
     optimizer = adam.AdamOptimizer(f, df, scheduler=scheduler)
     print('Initial weights', weights)
 
@@ -139,4 +142,4 @@ def refineRecNet(): # Train NN with own bfgs implementation
     plt.show()
 
 if __name__ == '__main__':
-    refineRecNet()
+    trainRecNetAdam()
