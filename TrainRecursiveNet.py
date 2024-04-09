@@ -69,12 +69,14 @@ def sampleWeights(net):
 
 def trainRecNetAdam():
     net, f, df = setupRecNet(outer_iterations=3, inner_iterations=4)
-    weights = sampleWeights(net)
+    #weights = sampleWeights(net)
+    weights = np.array([-0.15154089 , 0.07531116,  0.31811437 ,-1.46571744 , 0.97141644,  1.99997234,
+                        -1.14617318 ,-0.98831856,  0.91770601 ,-0.03434705])
     print('Initial Loss', f(weights))
     print('Initial Loss Derivative', lg.norm(df(weights)))
 
     # Setup the optimizer
-    scheduler = sch.PiecewiseConstantScheduler({0: 0.001, 1000: 0.001, 5000: 1.e-4, 10000: 1.e-5, 15000: 1.e-6})
+    scheduler = sch.PiecewiseConstantScheduler({0: 1.e-5, 3000: 1.e-5, 15000: 1.e-6})
     optimizer = adam.AdamOptimizer(f, df, scheduler=scheduler)
     print('Initial weights', weights)
 
@@ -96,7 +98,9 @@ def trainRecNetAdam():
 
 def trainRecNetBFGS():
     net, f, df = setupRecNet(outer_iterations=3, inner_iterations=4)
-    weights = sampleWeights(net)
+    #weights = sampleWeights(net)
+    weights = np.array([-0.15154089 , 0.07531116,  0.31811437 ,-1.46571744 , 0.97141644,  1.99997234,
+                        -1.14617318 ,-0.98831856,  0.91770601 ,-0.03434705])
     print('Initial Loss', f(weights))
     print('Initial Loss Derivative', lg.norm(df(weights)))
 
@@ -159,4 +163,4 @@ def trainRecNetBFGSImpl(): # Train NN with own bfgs implementation
     plt.show()
 
 if __name__ == '__main__':
-    trainRecNetAdam()
+    trainRecNetBFGS()

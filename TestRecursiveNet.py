@@ -77,8 +77,8 @@ def testbRecNet():
 def testAbRecNet():
     # Setup the network and load the weights
     net, _, _ = setupRecNet()
-    weights = np.array([ 0.10268829 , 0.42956351 ,-0.20035039  ,0.60186009, -1.54854183 ,-0.24866913,
-                         -0.21354488 , 0.56251621 ,-0.49080971 ,-0.02744335]) # Adam weights with random A and b
+    weights = np.array([-0.13620847 , 0.08868813,  0.10030381 ,-1.53856325 , 0.76759586 , 2.0007581,
+                        -1.13633718 ,-0.39309495 , 0.86202745, -0.03033491]) # Adam weights with random A and b
     
     # Load training data
     directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/R2N2/'
