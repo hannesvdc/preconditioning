@@ -2,8 +2,12 @@ import autograd.numpy as np
 import autograd.numpy.linalg as lg
 
 class R2N2:
-    def __init__(self, A_data, b_data, outer_iterations, inner_iterations, baseweight=4.0):
-        self.f = lambda x, A, b: np.dot(A, x) - b
+    def __init__(self, A_data, b_data, outer_iterations, inner_iterations, P=None, baseweight=4.0):
+        self.P = P
+        if self.P is None:
+            self.f = lambda x, A, b: np.dot(A, x) - b
+        else:
+            self.f = lambda x, A, b: np.dot(self.P, np.dot(A, x) - b)
         self.M = A_data.shape[0]
 
         self.A_data = A_data # Matrix with A_i in the first two dimensions

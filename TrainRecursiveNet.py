@@ -18,6 +18,7 @@ def generateData():
     # Sample Data
     N_data = 1000
     rng = rd.RandomState()
+    
     b_mean = np.array([2.483570, -0.691321, 3.238442, 7.615149, -1.170766])
     b_mean_repeated = np.array([b_mean,]*N_data).transpose()
     b = b_mean_repeated + rng.uniform(low=-1, high=1, size=(5, N_data))
