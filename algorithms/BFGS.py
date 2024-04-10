@@ -8,7 +8,6 @@ class BFGSOptimizer:
         self.f = loss_fn
         self.df = d_loss_fn
         self.scheduler = scheduler
-        self.stability_threshold = 1.e-10
 
         # Keep history of training
         self.losses = []
@@ -18,8 +17,10 @@ class BFGSOptimizer:
         x = np.copy(x0)
         l = self.f(x)
         g = self.df(x)
+        norm_g = lg.norm(g)
+
         self.losses.append(l)
-        self.gradient_norms.append(lg.norm(g))
+        self.gradient_norms.append(norm_g)
 
         I = np.eye(x.size)
         H = np.copy(I)
@@ -35,10 +36,11 @@ class BFGSOptimizer:
             xp = x + sk
             lp = self.f(xp)
             gp = self.df(xp)
+            norm_gp = lg.norm(gp)
             if not np.isfinite(lp):
                 print('Invalid Value Encountered. Aborting')
                 return xp
-            if tolerance is not None and lg.norm(gp) < tolerance:
+            if tolerance is not None and norm_gp < tolerance:
                 print('\nBFGS Optimzer Converged in', n_iterations, 'Epochs! Final Loss =', lp)
                 return xp
 
@@ -58,11 +60,13 @@ class BFGSOptimizer:
             x = np.copy(xp)
             l = lp
             g = np.copy(gp)
+            norm_g = norm_gp
 
+            # Keep internal history. Should we pre-allocate losses and gradient_norms for efficiency?
             self.losses.append(l)
-            self.gradient_norms.append(lg.norm(g))
+            self.gradient_norms.append(norm_g)
             print('Loss =', l)
-            print('Gradient Norm =', lg.norm(g))
+            print('Gradient Norm =', norm_g)
             print('Weights =', x)
 
         if tolerance is None:
