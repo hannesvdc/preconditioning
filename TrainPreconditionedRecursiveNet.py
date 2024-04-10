@@ -2,7 +2,6 @@ import autograd.numpy as np
 import autograd.numpy.linalg as lg
 import autograd.numpy.random as rd
 import matplotlib.pyplot as plt
-import scipy.optimize as opt
 import scipy.sparse.linalg as slg
 
 from autograd import jacobian
@@ -10,7 +9,6 @@ from autograd import jacobian
 import api.RecursiveNet as recnet
 import api.Scheduler as sch
 import algorithms.Adam as adam
-import algorithms.BFGS as bfgs
 
 
 # General setup routine shared by all training routines
@@ -27,9 +25,12 @@ def setupRecNet(outer_iterations=3, inner_iterations=4, baseweight=4.0):
                        [0.156244, 0.141251, 0.060267, 0.058072, 0.735495]])
     A_data = np.repeat(A[:,:,np.newaxis], N_data, axis=2)
     P = slg.spilu(A)
+    P = P.L.toarray().dot(P.U.toarray())
+    P_inv = lg.inv(P) # No need to cmpute inverse, but we will need P in ndarray form
+    print(P_inv)
 
     # Setup classes for training
-    net = recnet.R2N2(A_data, b_data, outer_iterations, inner_iterations, P=P, baseweight=baseweight)
+    net = recnet.R2N2(A_data, b_data, outer_iterations, inner_iterations, P=P_inv, baseweight=baseweight)
     f = lambda w: net.loss(w)
     df = jacobian(f)
 
@@ -54,7 +55,7 @@ def trainRecNetAdam():
     print('Initial Loss Derivative', lg.norm(df(weights)))
 
     # Setup the optimizer
-    scheduler = sch.PiecewiseConstantScheduler({0: 1.e-2, 100: 1.e-3, 3000: 1.e-5, 15000: 1.e-6})
+    scheduler = sch.PiecewiseConstantScheduler({0: 1.e-3, 3000: 1.e-5, 15000: 1.e-6})
     optimizer = adam.AdamOptimizer(f, df, scheduler=scheduler)
     print('Initial weights', weights)
 
