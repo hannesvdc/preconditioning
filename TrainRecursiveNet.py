@@ -43,12 +43,22 @@ def generateData():
     np.save(directory + b_filename, b)
 
 # General setup routine shared by all training routines
-def setupRecNet(outer_iterations=3, inner_iterations=4, baseweight=4.0):
+def setupRecNet(fixedA=True, outer_iterations=3, inner_iterations=4, baseweight=4.0):
     directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/R2N2/'
     A_filename = 'A_Training_Data.npy'
     b_filename = 'b_Training_Data.npy'
-    A_data = np.load(directory + A_filename)
     b_data = np.load(directory + b_filename)
+    N_data = b_data.shape[1]
+
+    A = np.array([[1.392232, 0.152829, 0.088680, 0.185377, 0.156244],
+                  [0.152829, 1.070883, 0.020994, 0.068940, 0.141251],
+                  [0.088680, 0.020994, 0.910692,-0.222769, 0.060267],
+                  [0.185377, 0.068940,-0.222769, 0.833275, 0.058072],
+                  [0.156244, 0.141251, 0.060267, 0.058072, 0.735495]])
+    if fixedA:
+        A_data = np.repeat(A[:,:,np.newaxis], N_data, axis=2)
+    else:
+        A_data = np.load(directory + A_filename)
 
     # Setup classes for training
     net = recnet.R2N2(A_data, b_data, outer_iterations, inner_iterations, baseweight=baseweight)

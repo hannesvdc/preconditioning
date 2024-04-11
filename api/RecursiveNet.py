@@ -32,8 +32,6 @@ class R2N2:
                 loss_weight = self.baseweight**(k+1)
                 x = self.inner_forward(x, A, b, weights)
                 total_loss += loss_weight * self.stable_normsq(self.f_loss(x, A, b))
-                if k == 0 and n == 10:
-                    print(self.stable_normsq(self.f_loss(x, A, b)))
 
         averaged_loss = total_loss / self.N_data
         return averaged_loss
