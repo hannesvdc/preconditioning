@@ -1,6 +1,7 @@
 import autograd.numpy as np
 import autograd.numpy.linalg as lg
 import autograd.numpy.random as rd
+import scipy.optimize as opt
 import matplotlib.pyplot as plt
 import scipy.sparse.linalg as slg
 
@@ -55,7 +56,7 @@ def trainRecNetAdam():
     print('Initial Loss Derivative', lg.norm(df(weights)))
 
     # Setup the optimizer
-    scheduler = sch.PiecewiseConstantScheduler({0: 1.e-3, 3000: 1.e-5, 15000: 1.e-6})
+    scheduler = sch.PiecewiseConstantScheduler({0: 1.e-5, 3000: 1.e-5, 15000: 1.e-6})
     optimizer = adam.AdamOptimizer(f, df, scheduler=scheduler)
     print('Initial weights', weights)
 
@@ -75,5 +76,43 @@ def trainRecNetAdam():
     plt.legend()
     plt.show()
 
+def trainRecNetBFGS():
+    net, f, df = setupRecNet(outer_iterations=3, inner_iterations=4)
+    weights = sampleWeights(net)
+    print('Initial Loss', f(weights))
+    print('Initial Loss Derivative', lg.norm(df(weights)))
+
+    losses = []
+    grad_norms = []
+    epoch_counter = [0]
+    def callback(x):
+        print('\nEpoch #', epoch_counter[0])
+        l = f(x)
+        g = lg.norm(df(x))
+        losses.append(l)
+        grad_norms.append(g)
+        epoch_counter[0] += 1
+        print('Loss =', l)
+        print('Gradient Norm =', g)
+        print('Weights', x)
+
+    epochs = 5000
+    method = 'BFGS'
+    result = opt.minimize(f, weights, jac=df, method=method,
+                                              options={'maxiter': epochs, 'gtol': 1.e-100}, 
+                                              callback=callback)
+    weights = result.x
+    print('Minimzed Loss', f(weights), df(weights))
+    print('Minimization Result', result)
+
+    # Post-processing
+    x_axis = np.arange(len(losses))
+    plt.semilogy(x_axis, grad_norms, label='Gradient Norms')
+    plt.semilogy(x_axis, losses, label='Training Loss')
+    plt.xlabel('Epoch')
+    plt.title(method)
+    plt.legend()
+    plt.show()
+
 if __name__ == '__main__':
-    trainRecNetAdam()
+    trainRecNetBFGS()
