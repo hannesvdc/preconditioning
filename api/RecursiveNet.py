@@ -9,6 +9,7 @@ class R2N2:
             self.f = lambda x, A, b: np.dot(self.P, np.dot(A, x) - b)
         else:
             self.f = self.f_loss
+        self.stable_normsq = lambda r: np.dot(r,r)
 
         self.M = A_data.shape[0]
         self.A_data = A_data # Matrix with A_i in the first two dimensions
@@ -30,7 +31,7 @@ class R2N2:
             for k in range(1, self.outer_iterations+1): # do self.outer_iterations iterations
                 loss_weight = self.baseweight**k
                 x = self.inner_forward(x, A, b, weights)
-                total_loss += loss_weight * lg.norm(self.f_loss(x, A, b))**2
+                total_loss += loss_weight * self.stable_normsq(self.f_loss(x, A, b))
 
         averaged_loss = total_loss / N
         return averaged_loss

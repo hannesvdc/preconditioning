@@ -20,15 +20,15 @@ def setupRecNet(outer_iterations=3, inner_iterations=4, baseweight=4.0):
     N_data = b_data.shape[1]
 
     A = np.array([[1.392232, 0.152829, 0.088680, 0.185377, 0.156244],
-                       [0.152829, 1.070883, 0.020994, 0.068940, 0.141251],
-                       [0.088680, 0.020994, 0.910692,-0.222769, 0.060267],
-                       [0.185377, 0.068940,-0.222769, 0.833275, 0.058072],
-                       [0.156244, 0.141251, 0.060267, 0.058072, 0.735495]])
+                  [0.152829, 1.070883, 0.020994, 0.068940, 0.141251],
+                  [0.088680, 0.020994, 0.910692,-0.222769, 0.060267],
+                  [0.185377, 0.068940,-0.222769, 0.833275, 0.058072],
+                  [0.156244, 0.141251, 0.060267, 0.058072, 0.735495]])
     A_data = np.repeat(A[:,:,np.newaxis], N_data, axis=2)
     P = slg.spilu(A)
-    P = P.L.toarray().dot(P.U.toarray())
+    P = np.matmul(P.L.toarray(), P.U.toarray())
     P_inv = lg.inv(P) # No need to cmpute inverse, but we will need P in ndarray form
-    print(P_inv)
+    print(lg.norm(np.matmul(A, P_inv), ord=2))
 
     # Setup classes for training
     net = recnet.R2N2(A_data, b_data, outer_iterations, inner_iterations, P=P_inv, baseweight=baseweight)
@@ -102,7 +102,7 @@ def trainRecNetBFGS():
                                               options={'maxiter': epochs, 'gtol': 1.e-100}, 
                                               callback=callback)
     weights = result.x
-    print('Minimzed Loss', f(weights), df(weights))
+    print('Minimzed Loss', f(weights), lg.norm(df(weights)))
     print('Minimization Result', result)
 
     # Post-processing
