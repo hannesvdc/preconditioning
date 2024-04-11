@@ -4,12 +4,15 @@ import autograd.numpy.linalg as lg
 class R2N2:
     def __init__(self, A_data, b_data, outer_iterations, inner_iterations, P=None, baseweight=4.0):
         self.P = P
-        if self.P is None:
-            self.f = lambda x, A, b: np.dot(A, x) - b
-        else:
+        self.f_loss = lambda x, A, b: np.dot(A, x) - b
+        if self.P is not None:
             self.f = lambda x, A, b: np.dot(self.P, np.dot(A, x) - b)
-        self.M = A_data.shape[0]
+        else:
+            self.f = self.f_loss
+        self.stable_normsq = lambda r: np.dot(r,r)
 
+        self.M = A_data.shape[0]
+        self.N_data = b_data.shape[1]
         self.A_data = A_data # Matrix with A_i in the first two dimensions
         self.b_data = b_data # Matrix with b_i as columns
 
@@ -19,19 +22,18 @@ class R2N2:
 
     def loss(self, weights): # Weights is a vector with n_inner * (n_inner+1) // 2 elements
         total_loss = 0.0
-        N = self.b_data.shape[1]
 
-        for n in range(N):
+        for n in range(self.N_data):
             x = np.zeros(self.M)
             A = self.A_data[:,:,n]
             b = self.b_data[:,n]
             
-            for k in range(1, self.outer_iterations+1): # do self.outer_iterations iterations
-                loss_weight = self.baseweight**k
+            for k in range(self.outer_iterations): # do self.outer_iterations iterations
+                loss_weight = self.baseweight**(k+1)
                 x = self.inner_forward(x, A, b, weights)
-                total_loss += loss_weight * lg.norm(self.f(x, A, b))**2
+                total_loss += loss_weight * self.stable_normsq(self.f_loss(x, A, b))
 
-        averaged_loss = total_loss / N
+        averaged_loss = total_loss / self.N_data
         return averaged_loss
     
     def forward(self, weights, A, b, n_outer_iterations=None):
