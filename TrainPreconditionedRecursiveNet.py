@@ -44,7 +44,7 @@ def sampleWeights(net):
     while True:
         weights = rng.normal(size=n_weights)
         loss = net.loss(weights)
-        if loss < 1.e6:
+        if loss < 5.e2:
             return weights
         
 
