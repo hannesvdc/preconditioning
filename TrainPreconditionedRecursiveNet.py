@@ -7,7 +7,7 @@ import scipy.sparse.linalg as slg
 
 from autograd import jacobian
 
-import api.RecursiveNet as recnet
+import api.KrylovRecursiveNet as recnet
 import api.Scheduler as sch
 import algorithms.Adam as adam
 

@@ -1,17 +1,17 @@
 import autograd.numpy as np
-import autograd.numpy.linalg as lg
 
 import internal.SuperStructure
 
 class KrylovSuperStructure(internal.SuperStructure):
     def __init__(self, A_data, b_data, outer_iterations, inner_iterations, P=None, baseweight=4.0):
+        super().__init__()
+
         self.P = P
         self.f_loss = lambda x, A, b: np.dot(A, x) - b
         if self.P is not None:
             self.f = lambda x, A, b: np.dot(self.P, np.dot(A, x) - b)
         else:
             self.f = self.f_loss
-        self.stable_normsq = lambda r: np.dot(r,r)
 
         self.M = A_data.shape[0]
         self.N_data = b_data.shape[1]
