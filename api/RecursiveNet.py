@@ -1,7 +1,9 @@
 import autograd.numpy as np
 import autograd.numpy.linalg as lg
 
-class R2N2:
+import internal.SuperStructure
+
+class KrylovSuperStructure(internal.SuperStructure):
     def __init__(self, A_data, b_data, outer_iterations, inner_iterations, P=None, baseweight=4.0):
         self.P = P
         self.f_loss = lambda x, A, b: np.dot(A, x) - b

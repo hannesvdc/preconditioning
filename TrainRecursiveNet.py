@@ -61,7 +61,7 @@ def setupRecNet(fixedA=True, outer_iterations=3, inner_iterations=4, baseweight=
         A_data = np.load(directory + A_filename)
 
     # Setup classes for training
-    net = recnet.R2N2(A_data, b_data, outer_iterations, inner_iterations, baseweight=baseweight)
+    net = recnet.KrylovSuperStructure(A_data, b_data, outer_iterations, inner_iterations, baseweight=baseweight)
     f = lambda w: net.loss(w)
     df = jacobian(f)
 

@@ -43,7 +43,7 @@ def setupRecNet(fixedA=True, outer_iterations=3, inner_iterations=4, baseweight=
         print('precond', lg.norm(np.matmul(A_data[:,:,n], P_inv), ord=2))
 
     # Setup classes for training
-    net = recnet.R2N2(A_data, b_data, outer_iterations, inner_iterations, P=P_inv, baseweight=baseweight)
+    net = recnet.KrylovSuperStructure(A_data, b_data, outer_iterations, inner_iterations, P=P_inv, baseweight=baseweight)
     f = lambda w: net.loss(w)
     df = jacobian(f)
 
