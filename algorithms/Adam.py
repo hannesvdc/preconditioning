@@ -17,6 +17,9 @@ class AdamOptimizer:
         self.losses = []
         self.gradient_norms = []
 
+    def getName(self):
+        return 'Adam'
+
     def optimize(self, x0, n_epochs=100, tolerance=1.e-8):
         x = np.copy(x0)
         l = self.f(x)

@@ -9,14 +9,14 @@ from TrainRecursiveNet import setupRecNet
 
 def testbRecNet():
     # Setup the network and load the weights
-    net, _, _ = setupRecNet()
+    net, _, _ = setupRecNet(fixedA=True)
     weights = np.array([-0.75338897, -0.69512928 ,-1.28298784, -0.8088681 ,  0.87909088 , 1.48089791,
                         -0.69293485 ,-2.75058767 ,-2.00362172 , 0.90054142]) # Adam + BFGS refinement
     
     # Generate test data. Same distribution as training data. Test actual training data next
     N_data = 1000
     rng = rd.RandomState()
-    A = np.array([[1.392232, 0.152829, 0.088680, 0.185377, 0.156244],
+    A_mean = np.array([[1.392232, 0.152829, 0.088680, 0.185377, 0.156244],
                   [0.152829, 1.070883, 0.020994, 0.068940, 0.141251],
                   [0.088680, 0.020994, 0.910692,-0.222769, 0.060267],
                   [0.185377, 0.068940,-0.222769, 0.833275, 0.058072],
@@ -30,8 +30,9 @@ def testbRecNet():
     n_inner_iterations = 4
     errors = np.zeros((N_data, n_outer_iterations+1))
     for n in range(N_data):
+        A = A_mean
         rhs = b[:,n]
-        samples = net.forward(weights, rhs, n_outer_iterations)
+        samples = net.forward(weights, A, rhs, n_outer_iterations)
 
         for k in range(len(samples)):
             err = lg.norm(A.dot(samples[k]) - rhs)
@@ -69,6 +70,7 @@ def testbRecNet():
     plt.xticks(np.linspace(0, n_outer_iterations, n_outer_iterations+1))
     plt.xlabel(r'# Outer Iterations')
     plt.ylabel('Error')
+    plt.title(r'Random $b$, Fixed $A$')
     plt.xlim((-0.5, 10.5))
     plt.ylim((1.e-16, 70))
     plt.legend()
@@ -111,7 +113,6 @@ def testAbRecNet():
         for k in range(1, n_outer_iterations+1):
             x, _ = slg.gmres(A, rhs, x0=np.zeros(rhs.size), maxiter=k, restart=n_inner_iterations, tol=0.0)
             gmres_errors[n,k] = lg.norm(A.dot(x) - rhs)
-        print('gmres error', gmres_errors[n,n_outer_iterations], errors[n,n_outer_iterations])
 
     # Average the errors
     avg_errors = np.average(errors, axis=0)
@@ -127,6 +128,7 @@ def testAbRecNet():
     plt.xticks(np.linspace(0, n_outer_iterations, n_outer_iterations+1))
     plt.xlabel(r'# Outer Iterations')
     plt.ylabel('Error')
+    plt.title(r'Random $b$, Random $A$')
     plt.xlim((-0.5, 10.5))
     plt.ylim((1.e-16, 70))
     plt.legend()
@@ -134,4 +136,3 @@ def testAbRecNet():
 
 if __name__ == '__main__':
     testAbRecNet()
-

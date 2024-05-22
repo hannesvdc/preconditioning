@@ -79,20 +79,20 @@ def sampleWeights(net):
             return weights
 
 def trainRecNetAdam():
-    net, f, df = setupRecNet(outer_iterations=3, inner_iterations=4)
-    #weights = sampleWeights(net)
-    weights = np.array([-0.15154089 , 0.07531116,  0.31811437 ,-1.46571744 , 0.97141644,  1.99997234,
-                        -1.14617318 ,-0.98831856,  0.91770601 ,-0.03434705])
+    net, f, df = setupRecNet(fixedA=False, outer_iterations=3, inner_iterations=4)
+    weights = sampleWeights(net)
+    #weights = np.array([-0.15154089 , 0.07531116,  0.31811437 ,-1.46571744 , 0.97141644,  1.99997234,
+    #                    -1.14617318 ,-0.98831856,  0.91770601 ,-0.03434705])
     print('Initial Loss', f(weights))
     print('Initial Loss Derivative', lg.norm(df(weights)))
 
     # Setup the optimizer
-    scheduler = sch.PiecewiseConstantScheduler({0: 1.e-5, 3000: 1.e-5, 15000: 1.e-6})
+    scheduler = sch.PiecewiseConstantScheduler({0: 1.e-2, 1000: 1.e-3, 5000: 1.e-5, 15000: 1.e-6})
     optimizer = adam.AdamOptimizer(f, df, scheduler=scheduler)
     print('Initial weights', weights)
 
     # Do the training
-    epochs = 20000
+    epochs = 5000 #20000 for full convergence
     weights = optimizer.optimize(weights, n_epochs=epochs)
     losses = np.array(optimizer.losses)
     grad_norms = np.array(optimizer.gradient_norms)
@@ -100,18 +100,21 @@ def trainRecNetAdam():
 
     # Post-processing
     x_axis = np.arange(len(losses))
-    plt.semilogy(x_axis, grad_norms, label='Gradient Norms')
+    plt.grid(linestyle = '--', linewidth = 0.5)
     plt.semilogy(x_axis, losses, label='Training Loss')
+    plt.semilogy(x_axis, grad_norms, label='Loss Gradient')
     plt.xlabel('Epoch')
     plt.title('Adam')
     plt.legend()
     plt.show()
 
 def trainRecNetBFGS():
-    net, f, df = setupRecNet(outer_iterations=3, inner_iterations=4)
+    net, f, df = setupRecNet(fixedA=False, outer_iterations=3, inner_iterations=4)
     #weights = sampleWeights(net)
-    weights = np.array([-0.15154089 , 0.07531116,  0.31811437 ,-1.46571744 , 0.97141644,  1.99997234,
-                        -1.14617318 ,-0.98831856,  0.91770601 ,-0.03434705])
+    #weights = np.array([-0.24980164, -0.74934056, -0.47248331,  0.18593937 ,-0.27150439,  0.84459612,
+    #                    0.17462107, -0.66371624,  0.29792585 ,-1.01021416]) # Initial weights found by Adam optimizer (fixed A)
+    weights = np.array([-0.32563645 , 0.69566875 , 0.12754494 ,-0.3549175,   1.15064393,  0.87038765,
+                        0.76213995, -0.18336323 ,-0.51903473 , 0.07748717]) # Initial weights found by Adam optimizer (random A)
     print('Initial Loss', f(weights))
     print('Initial Loss Derivative', lg.norm(df(weights)))
 
@@ -140,8 +143,9 @@ def trainRecNetBFGS():
 
     # Post-processing
     x_axis = np.arange(len(losses))
-    plt.semilogy(x_axis, grad_norms, label='Gradient Norms')
+    plt.grid(linestyle = '--', linewidth = 0.5)
     plt.semilogy(x_axis, losses, label='Training Loss')
+    plt.semilogy(x_axis, grad_norms, label='Loss Gradient')
     plt.xlabel('Epoch')
     plt.title(method)
     plt.legend()
@@ -166,8 +170,8 @@ def trainRecNetBFGSImpl(): # Train NN with own bfgs implementation
 
     # Post-processing
     x_axis = np.arange(len(losses))
-    plt.semilogy(x_axis, grad_norms, label='Gradient Norms')
     plt.semilogy(x_axis, losses, label='Training Loss')
+    plt.semilogy(x_axis, grad_norms, label='Loss Gradient')
     plt.xlabel('Epoch')
     plt.title('BFGS Refinement with learning rate = ' + str(learning_rate))
     plt.legend()
