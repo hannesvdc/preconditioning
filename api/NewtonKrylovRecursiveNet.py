@@ -33,6 +33,15 @@ class NewtonKrylovSuperStructure(ss.SuperStructure):
         averaged_loss = total_loss / self.N_data
         return averaged_loss
     
+    def forward(self, x0, weights, n_outer_iterations):
+        x = np.copy(x0)
+        samples = [x]
+
+        for _ in range(n_outer_iterations): # do self.outer_iterations iterations
+            x = self.inner_forward(x, weights) # x = x_k = solution to self.f(x) = 0
+            samples.append(x)
+        return samples
+    
     # One complete inner iterations
     def inner_forward(self, xk, weights):
         y = np.zeros_like(xk) # y stores the variable that solves F(xk, y) = 0 (i.e. the linear system)
