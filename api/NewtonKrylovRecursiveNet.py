@@ -1,17 +1,16 @@
 import autograd.numpy as np
 
-import internal.SuperStructure
+import api.internal.SuperStructure as ss
 
-class NewtonKrylovSuperStructure(internal.SuperStructure):
-    def __init__(self, f, M, data, outer_iterations, inner_iterations, baseweight=4.0):
+class NewtonKrylovSuperStructure(ss.SuperStructure):
+    def __init__(self, f, data, outer_iterations, inner_iterations, baseweight=4.0):
         super().__init__()
 
         self.eps = 1.e-8
 
         self.f = f
-        self.dfv = lambda x, v: (self.f(x + self.eps*v) - self.f(x)) / self.eps
-        self.F = lambda x, v: self.dfv(x, v) - self.f(x)
-        self.M = M
+        self.df_v = lambda x, v: (self.f(x + self.eps*v) - self.f(x)) / self.eps
+        self.F = lambda x, v: self.df_v(x, v) - self.f(x)
 
         self.data = data
         self.N_data = data.shape[1]
@@ -24,29 +23,15 @@ class NewtonKrylovSuperStructure(internal.SuperStructure):
         total_loss = 0.0
 
         for n in range(self.N_data):
-            d = self.data[:,n]
-            x = np.zeros(self.M)
+            x = self.data[:,n] # The data in this case is the initial condition
 
             for k in range(self.outer_iterations): # do self.outer_iterations iterations
                 loss_weight = self.baseweight**(k+1)
-                x = self.inner_forward(x, d, weights)
-                total_loss += loss_weight * self.stable_normsq(self.f_loss(x, d))
+                x = self.inner_forward(x, weights) # x = x_k = solution to self.f(x) = 0
+                total_loss += loss_weight * self.stable_normsq(self.f(x))
 
         averaged_loss = total_loss / self.N_data
         return averaged_loss
-    
-    def forward(self, weights, n_outer_iterations=None):
-        x = np.zeros(self.M) # x = x_k = solutition to self.f(x) = -0
-        if n_outer_iterations is None:
-            n_outer_iterations = self.outer_iterations
-        
-        samples = [x]
-        for _ in range(1, n_outer_iterations+1):
-            y = self.inner_forward(x, weights) # Solution to linear systems
-            x = x + y # y = x_{k+1} - x_k
-            samples.append(x)
-
-        return samples
     
     # One complete inner iterations
     def inner_forward(self, xk, weights):
@@ -58,7 +43,8 @@ class NewtonKrylovSuperStructure(internal.SuperStructure):
             v = self.F(xk, yp) # v_n
             V = np.append(V, np.array([v]).transpose(), axis=1)
 
-        return self._N(y, V, self.inner_iterations, weights)
+        yp = self._N(y, V, self.inner_iterations, weights)
+        return xk + yp # y = x_{k+1} - x_k
     
     def _N(self, y, V, n, weights):
         lower_index = ( (n-1) * n ) // 2
