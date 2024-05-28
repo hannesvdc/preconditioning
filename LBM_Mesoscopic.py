@@ -192,4 +192,5 @@ def NewtonKrylovLBM(store=False):
 
 
 if __name__ == '__main__':
-	NewtonKrylovLBM()
+	plot_LBM()
+	#NewtonKrylovLBM()
