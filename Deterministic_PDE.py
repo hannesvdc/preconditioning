@@ -1,10 +1,11 @@
 import autograd.numpy as np
+import autograd.numpy.linalg as lgs
 import numpy.random as rd
 import matplotlib.pyplot as plt
 import numpy as onp
 import scipy.optimize as opt
 
-from internal.NewtonKrylov import *
+from api.algorithms.NewtonKrylov import *
 
 
 def f(x, d1, d2):
@@ -23,6 +24,20 @@ def f(x, d1, d2):
 		f2[m] = d2*ddV + 3.0            - U[m]**2*V[m]
 
 	return np.concatenate((f1, f2))
+
+def f_fast(x, d1, d2, M):
+	dx = 1.0/M
+	U = x[0:M]
+	V = x[M:]
+
+	# Compute indices module M for periodic boundary conditions
+	ddU = (np.roll(U, -1) - 2.0*U + np.roll(U, 1)) / dx**2
+	ddV = (np.roll(V, -1) - 2.0*V + np.roll(V, 1)) / dx**2
+	f1 = d1*ddU + 1.0 - 2.0*U + U**2*V
+	f2 = d2*ddV + 3.0         - U**2*V
+
+	return np.concatenate((f1, f2))
+
 	
 def PDE_Timestepper(x, T, M, d2, verbose=False):
 	d1 = 5.e-4
@@ -35,7 +50,7 @@ def PDE_Timestepper(x, T, M, d2, verbose=False):
 
 	for n in range(N):
 		# Apply right-hand side as update (with finite differences)
-		f_rhs = f(x, d1, d2)
+		f_rhs = f_fast(x, d1, d2, M)
 		x = x + dt*f_rhs
 
 		# Update timestepping
