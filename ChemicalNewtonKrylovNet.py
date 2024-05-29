@@ -8,7 +8,7 @@ from autograd import jacobian
 
 import api.NewtonKrylovRecursiveNet as recnet
 import api.Scheduler as sch
-import algorithms.Adam as adam
+import api.algorithms.Adam as adam
 
 import Deterministic_PDE as pde
 
@@ -16,7 +16,7 @@ def setupNeuralNetwork(outer_iterations=3, inner_iterations=4, baseweight=4.0):
     # Define the Objective Function Psi
     d2 = 0.06
     M = 200
-    T = 5.e-4 # 5dt
+    T = 5.e-3 # 5dt
     def psi(x):
         xp = pde.PDE_Timestepper(x, T, M, d2, verbose=False) # Use PDE first
         return x - xp

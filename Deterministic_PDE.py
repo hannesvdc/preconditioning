@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as onp
 import scipy.optimize as opt
 
-from algorithms.NewtonKrylov import *
+from api.algorithms.NewtonKrylov import *
 
 
 def f(x, d1, d2):
