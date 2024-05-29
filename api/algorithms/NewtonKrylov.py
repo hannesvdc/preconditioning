@@ -3,7 +3,7 @@ import autograd.numpy.linalg as lg
 
 import scipy.sparse.linalg as slg
 
-from algorithms.GMRES import *
+from api.algorithms.GMRES import *
 
 def NewtonKrylov(psi, d_psi, x0, max_it, tolerance=1.e-6, verbose=False):
     s = x0.size

@@ -2,6 +2,7 @@ import autograd.numpy as np
 import autograd.numpy.linalg as lg
 import autograd.numpy.random as rd
 import scipy.optimize as opt
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 from autograd import jacobian
@@ -16,7 +17,7 @@ def setupNeuralNetwork(outer_iterations=3, inner_iterations=4, baseweight=4.0):
     # Define the Objective Function Psi
     d2 = 0.06
     M = 200
-    T = 5.e-3 # 5dt
+    T = 5.e-4 # 5dt
     def psi(x):
         xp = pde.PDE_Timestepper(x, T, M, d2, verbose=False) # Use PDE first
         return x - xp
@@ -34,7 +35,7 @@ def setupNeuralNetwork(outer_iterations=3, inner_iterations=4, baseweight=4.0):
     f = lambda w: net.loss(w)
     df = jacobian(f)
 
-    return net, f, df
+    return net, f, df, x0_data
 
 def sampleWeights(net):
     rng = rd.RandomState()
@@ -45,7 +46,7 @@ def sampleWeights(net):
     return weights
 
 def trainNKNetBFGS():
-    net, f, df = setupNeuralNetwork(outer_iterations=2, inner_iterations=4)
+    net, f, df, _ = setupNeuralNetwork(outer_iterations=2, inner_iterations=4)
     weights = sampleWeights(net)
     print('Initial Loss', f(weights))
     print('Initial Loss Derivative', lg.norm(df(weights)))
@@ -79,9 +80,67 @@ def trainNKNetBFGS():
     plt.semilogy(x_axis, losses, label='Training Loss')
     plt.semilogy(x_axis, grad_norms, label='Loss Gradient')
     plt.xlabel('Epoch')
-    plt.title(method)
+    plt.title('Chemical Reaction Newton-Krylov Neural Network')
     plt.legend()
     plt.show()
 
+def testNewtonKrylovNet():
+    # Setup the network, weights obtained by BFGS training (subroutine above)
+    M = 200
+    net, _,  _, x0_data = setupNeuralNetwork(outer_iterations=2, inner_iterations=4)
+    weights = np.array([-1.919e+00, -2.155e+00, -1.756e+00, -2.206e+00, -1.996e+00,
+                        -1.641e+00,  2.354e+00,  2.453e+00,  2.566e+00,  2.265e+00,])
+    
+    # Run all data througgh the neural network
+    N_data = x0_data.shape[1]
+    n_outer_iterations = 10 # Does not need be the same as the number the network was trained on.
+    errors = np.zeros((N_data, n_outer_iterations+1))
+    for n in range(N_data):
+        print('n =', n)
+        x0 = x0_data[:,n]
+        samples = net.forward(x0, weights, n_outer_iterations)
+
+        for k in range(len(samples)):
+            err = lg.norm(net.f(samples[k]))
+            errors[n,k] = err
+
+    # Average the errors
+    avg_errors = np.average(errors, axis=0)
+
+    # Plot the errors
+    fig, ax = plt.subplots()  
+    k_axis = np.linspace(0, n_outer_iterations, n_outer_iterations+1)
+    rect = mpl.patches.Rectangle((net.outer_iterations+0.5, 1.e-8), n_outer_iterations-net.outer_iterations, 70, color='gray', alpha=0.2)
+    ax.add_patch(rect)
+    plt.semilogy(k_axis, avg_errors, label=r'$|f(x_k)|$', linestyle='--', marker='d')
+    plt.xticks(np.linspace(0, n_outer_iterations, n_outer_iterations+1))
+    plt.xlabel(r'# Outer Iterations $k$')
+    plt.ylabel('Error')
+    plt.xlim((-0.5,n_outer_iterations + 0.5))
+    plt.ylim((0.1*min(np.min(avg_errors), np.min(avg_errors)),70))
+    plt.title('Newton-Krylov Network for Chemical Reaction')
+    plt.legend()
+
+    # Plot the computed steady-state solution
+    index = np.argwhere(errors == np.min(errors))[0]
+    print('index=', index)
+    data_index = index[0]
+    outer_index = index[1]
+    data_point = x0_data[:, data_index]
+    samples = net.forward(data_point, weights, n_outer_iterations)
+    x_ss = samples[outer_index]
+    U = x_ss[0:M]; V = x_ss[M:]
+
+    x_array = np.linspace(0.0, 1.0, M)
+    plt.figure()
+    plt.plot(x_array, U, label=r'$U(x)$', color='red')
+    plt.plot(x_array, V, label=r'$V(x)$', color='blue')
+    plt.xlabel(r'$x$')
+    plt.title(r'Steady-State Newton-Krylov Neural Network')
+    plt.legend()
+    plt.show()
+
+
 if __name__ == '__main__':
-    trainNKNetBFGS()
+    #trainNKNetBFGS()
+    testNewtonKrylovNet()
