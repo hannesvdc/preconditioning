@@ -7,24 +7,6 @@ import scipy.optimize as opt
 
 from api.algorithms.NewtonKrylov import *
 
-
-def f(x, d1, d2):
-	M = int(x.size / 2)
-	dx = 1.0/M
-
-	U = x[0:M]
-	V = x[M:]
-	f1 = 0.0*U
-	f2 = 0.0*V
-	# Compute indices module M for periodic boundary conditions
-	for m in range(0, M):
-		ddU = (U[(m+1) % M] - 2.0*U[m] + U[(m-1) % M])/dx**2
-		ddV = (V[(m+1) % M] - 2.0*V[m] + V[(m-1) % M])/dx**2
-		f1[m] = d1*ddU + 1.0 - 2.0*U[m] + U[m]**2*V[m]
-		f2[m] = d2*ddV + 3.0            - U[m]**2*V[m]
-
-	return np.concatenate((f1, f2))
-
 def f_fast(x, d1, d2, M):
 	dx = 1.0/M
 	U = x[0:M]
@@ -101,7 +83,7 @@ def findFixedPointNK():
 	tolerance = 1.e-6
 	solution, f_value = NewtonKrylov(psi, d_psi, x0, max_it, tolerance=tolerance, verbose=True)
 	print('Solution:', solution)
-	print('Residue:', f_value, lg.norm(f_value), lg.norm(f(solution, d1, d2)))
+	print('Residue:', f_value, lg.norm(f_value), lg.norm(f_fast(solution, d1, d2, M)))
 
 	# Store Found Solution
 	directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK/'

@@ -135,22 +135,20 @@ def trainNKNetBFGS():
 
 def testNKNet():
     # Setup the network and load the weights
-    inner_iterations = 4
+    inner_iterations = 10
     net, _, _ = setupRecNet(outer_iterations=3, inner_iterations=inner_iterations)
-    weights = np.array([  -1.37418947 ,  -0.14445959 ,   2.51583727 , -17.92557257 ,-112.11663472,
-                            44.1241637   , -4.88042119,  -50.64821349  , 18.05257709  , -0.54452882])
-    #weights = np.array([ -5.65489262 , 15.67488836 ,  9.83137438 , 10.87824758 , 18.88908299,
-    #                    -0.459666 ,  -12.37188497 ,-26.59916135 , -3.32415882 ,  3.3055943 ]) # Adam + BFGS refinement for 4 inner iterations
-    # weights = np.array([-1.03271415, -0.7997393,  -5.9540853,   0.61832089,  0.55027126, -1.09914459,
-    #                     -2.16602657,  4.75832453,  1.96480265, -0.7004273,  -0.73600679, -2.96956567,
-    #                     -2.41837951,  0.23372672, -1.85472313,  1.45412704, -0.02829014, -0.47087389,
-    #                      2.21695837,  2.03832011,  4.87277665,  1.15523701,  2.50459132, -0.36272781,
-    #                     -1.65029348, -2.6306855,  -2.83509759, -0.82244293, -0.6904838,  -1.69207527,
-    #                     -0.27236912, -4.96302391, -2.89757248,  1.03521323, -0.13689083,  2.47803962,
-    #                      0.58843259,  1.40852186, -1.57034324,  1.15022001, -1.58687977, -0.02086865,
-    #                      3.42095928,  2.00779577,  2.81886552,  0.05802382,  1.2304748,   0.74143769,
-    #                      0.39991601,  1.06206259,  0.68280461, -2.40568384,  2.13383043, -3.23630259,
-    #                      0.68182228]) # Adam + BFGS refinement for 10 inner iterations
+    #weights = np.array([  -1.37418947 ,  -0.14445959 ,   2.51583727 , -17.92557257 ,-112.11663472,
+    #                        44.1241637   , -4.88042119,  -50.64821349  , 18.05257709  , -0.54452882]) # BFGS, inner=4
+    weights = np.array([ 3.62171888, -0.05105312,  2.47344573, -2.66141006, -1.60592837,  2.90585088,
+                        -1.17764855,  3.74725482, -0.82672264, -0.31907444,  2.94074872, -1.7477809,
+                         1.00887055, -1.01675493, -1.59855039,  1.72257513, -0.809649  , -2.37069611,
+                         4.60295604, -1.60238219,  3.02176158, -1.79727951,  0.49863182,  0.39308403,
+                        -0.41880952,  0.90450579,  1.27324059,  0.83236779,  0.52363986, -1.1758039,
+                         2.41550295,  1.71376175, -0.60731314, -1.68612676,  0.64503314,  6.87339464,
+                        -1.49399387, -0.89535193,  0.82095439, -0.26823959, -1.42724306,  0.10659001,
+                        -0.00688416, -1.2430089 ,  1.55600556,  1.18506993,  0.74220142, -0.91387998,
+                         2.81471078,  3.73218662,  2.23457249,  1.62909791,  3.01399171, -1.59179524,
+                         0.63816011]) # inner = 10 BFGS
     # Generate test data. Same distribution as training data. Test actual training data next
     m = 10
     N_data = 1000
@@ -178,6 +176,7 @@ def testNKNet():
 
     # Average the errors
     avg_errors = np.average(errors, axis=0)
+    min_errors = np.min(errors, axis=0)
     avg_nk_errors = np.average(nk_errors, axis=0)
 
     # Plot the errors
@@ -185,8 +184,9 @@ def testNKNet():
     k_axis = np.linspace(0, n_outer_iterations, n_outer_iterations+1)
     rect = mpl.patches.Rectangle((net.outer_iterations+0.5, 1.e-8), 7.5, 70, color='gray', alpha=0.2)
     ax.add_patch(rect)
-    plt.semilogy(k_axis, avg_errors, label='Neural Network Output Error', linestyle='--', marker='d')
-    plt.semilogy(k_axis, avg_nk_errors, label='Scipy Newton-Krylov Error', linestyle='--', marker='d')
+    plt.semilogy(k_axis, avg_errors, label='Averaged Neural Network Output Error', linestyle='--', marker='d')
+    plt.semilogy(k_axis, min_errors, label='Minimal Neural Network Output Error', linestyle='--', marker='d')
+    plt.semilogy(k_axis, avg_nk_errors, label='Averaged Scipy Newton-Krylov Error', linestyle='--', marker='d')
     plt.xticks(np.linspace(0, n_outer_iterations, n_outer_iterations+1))
     plt.xlabel(r'# Outer Iterations $k$')
     plt.ylabel('Error')
@@ -198,4 +198,5 @@ def testNKNet():
     plt.show()
 
 if __name__ == '__main__':
-    trainNKNetBFGS()
+    #trainNKNetBFGS()
+    testNKNet()

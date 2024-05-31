@@ -12,7 +12,10 @@ import Deterministic_PDE as pde
 
 def setupNeuralNetwork(outer_iterations=3, inner_iterations=4, baseweight=4.0):
     # Define the Objective Function Psi
-    parameters = {'d2': 0.06, 'M': 200, 'T': 5.e-4}
+    M = 200
+    d2 = 0.06
+    T = 5.e-4
+    parameters = {'d2': d2, 'M': M, 'T': T}
     def psi(x):
         xp = pde.PDE_Timestepper(x, parameters['T'], parameters['M'], parameters['d2'], verbose=False) # Use PDE first
         return x - xp
@@ -84,7 +87,7 @@ def testNewtonKrylovNet():
     # Setup the network, weights obtained by BFGS training (subroutine above)
     net, _,  _, x0_data, parameters = setupNeuralNetwork(outer_iterations=2, inner_iterations=4)
     weights = np.array([-1.919e+00, -2.155e+00, -1.756e+00, -2.206e+00, -1.996e+00,
-                        -1.641e+00,  2.354e+00,  2.453e+00,  2.566e+00,  2.265e+00,])
+                        -1.641e+00,  2.354e+00,  2.453e+00,  2.566e+00,  2.265e+00,]) # inner = 4 BFGS
     M = parameters['M']
     
     # Run all data througgh the neural network
@@ -104,11 +107,11 @@ def testNewtonKrylovNet():
     avg_errors = np.average(errors, axis=0)
 
     # Plot the errors
-    fig, ax = plt.subplots()  
+    _, ax = plt.subplots()  
     k_axis = np.linspace(0, n_outer_iterations, n_outer_iterations+1)
     rect = mpl.patches.Rectangle((net.outer_iterations+0.5, 1.e-8), n_outer_iterations-net.outer_iterations, 70, color='gray', alpha=0.2)
     ax.add_patch(rect)
-    plt.semilogy(k_axis, avg_errors, label=r'$|f(x_k)|$', linestyle='--', marker='d')
+    plt.semilogy(k_axis, avg_errors, label=r'$|\psi(x_k)|$', linestyle='--', marker='d')
     plt.xticks(np.linspace(0, n_outer_iterations, n_outer_iterations+1))
     plt.xlabel(r'# Outer Iterations $k$')
     plt.ylabel('Error')
@@ -130,8 +133,8 @@ def testNewtonKrylovNet():
 
     x_array = np.linspace(0.0, 1.0, M)
     plt.figure()
-    plt.plot(x_array, U, label=r'$U(x)$', color='red')
-    plt.plot(x_array, V, label=r'$V(x)$', color='blue')
+    plt.plot(x_array, U, label=r'$U_s(x)$', color='red')
+    plt.plot(x_array, V, label=r'$V_s(x)$', color='blue')
     plt.xlabel(r'$x$')
     plt.suptitle('Steady-State Newton-Krylov Neural Network')
     plt.title(r'Inner Iterations = ' + str(net.inner_iterations) + r',  $T$ = ' + str(parameters['T']))
