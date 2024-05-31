@@ -9,8 +9,8 @@ class NewtonKrylovSuperStructure(ss.SuperStructure):
         self.eps = 1.e-8
 
         self.f = f
-        self.df_v = lambda x, v: (self.f(x + self.eps*v) - self.f(x)) / self.eps
-        self.F = lambda x, v: self.df_v(x, v) - self.f(x)
+        self.df_v = lambda x, v, fx: (self.f(x + self.eps*v) - fx) / self.eps
+        self.F = lambda x, v, fx: self.df_v(x, v, fx) - fx
 
         self.data = data
         self.N_data = data.shape[1]
@@ -45,11 +45,12 @@ class NewtonKrylovSuperStructure(ss.SuperStructure):
     # One complete inner iterations
     def inner_forward(self, xk, weights):
         y = np.zeros_like(xk) # y stores the variable that solves F(xk, y) = 0 (i.e. the linear system)
-        V = np.array([self.F(xk, y)]).transpose() # v_0
+        f_value = self.f(xk)
+        V = np.array([self.F(xk, y, f_value)]).transpose() # v_0
 
         for n in range(1, self.inner_iterations): # do inner_iterations-1 function evaluations
             yp = self._N(y, V, n, weights)
-            v = self.F(xk, yp) # v_n
+            v = self.F(xk, yp, f_value) # v_n
             V = np.append(V, np.array([v]).transpose(), axis=1)
 
         yp = self._N(y, V, self.inner_iterations, weights)

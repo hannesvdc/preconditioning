@@ -10,7 +10,7 @@ from autograd import jacobian
 
 import api.NewtonKrylovRecursiveNet as recnet
 import api.Scheduler as sch
-import algorithms.Adam as adam
+import api.algorithms.Adam as adam
 
 # General setup routine shared by all training routines
 def setupRecNet(outer_iterations=3, inner_iterations=4, baseweight=4.0):
@@ -52,7 +52,7 @@ def sampleWeights(net, threshold=1.e6):
             return weights
 
 def trainNKNetAdam():
-    net, f, df = setupRecNet(outer_iterations=3, inner_iterations=10)
+    net, f, df = setupRecNet(outer_iterations=3, inner_iterations=4)
     weights = sampleWeights(net, threshold=1.e4)
     print('Initial Loss', f(weights))
     print('Initial Loss Derivative', lg.norm(df(weights)))
@@ -83,19 +83,20 @@ def trainNKNetAdam():
     plt.show()
 
 def trainNKNetBFGS():
-    _, f, df = setupRecNet(outer_iterations=3, inner_iterations=10)
+    net, f, df = setupRecNet(outer_iterations=3, inner_iterations=4)
     #weights = np.array([-1.93181061,  0.18862427 ,-0.36436414,  1.75800653,  0.81753954 ,-2.90153424,
     #                    1.11418358 ,-1.1968051 ,  0.35490947 , 0.77058088]) # Initial weights found by Adamm optimizer for 4 inner iterations (10 weights)
-    weights = np.array([-1.24055358 ,-0.4106254  , 0.53113248 ,-2.16433248 , 0.65725721 ,-0.21630475,
-                        -1.17453146 , 2.24363514,  1.89097275 ,-0.68969743 ,-0.69849664, -0.6540787,
-                        -2.07049155 , 0.75823699,  0.11975308 , 0.12594642 ,-0.67561681 ,-0.33026324,
-                         0.86826558, -0.45040382, -0.31106317 , 0.92139191,  1.5882401 , -0.01931782,
-                        -0.74068016,  0.15262985,  0.61933969, -1.25173629 ,-0.06990096 , 1.40962036,
-                         0.47323309 ,-1.40968015 ,-1.18388217 , 1.93881627, -0.35910843 , 0.33075125,
-                         0.02806573 , 0.08024676 ,-1.28481063 , 0.07152657 ,-1.16128504 , 1.290264,
-                         0.60666654 , 1.13796111 , 1.28576911, -0.13773673, -0.45522121 , 0.13978074,
-                         0.31452089 , 0.65256346 , 0.73105478, -0.8327662 ,  0.41297878 ,-1.85392176,
-                         0.24883293]) # Initial weights found by Adamm optimizer for 10 inner iterations (45 weights)
+    # weights = np.array([-1.24055358 ,-0.4106254  , 0.53113248 ,-2.16433248 , 0.65725721 ,-0.21630475,
+    #                     -1.17453146 , 2.24363514,  1.89097275 ,-0.68969743 ,-0.69849664, -0.6540787,
+    #                     -2.07049155 , 0.75823699,  0.11975308 , 0.12594642 ,-0.67561681 ,-0.33026324,
+    #                      0.86826558, -0.45040382, -0.31106317 , 0.92139191,  1.5882401 , -0.01931782,
+    #                     -0.74068016,  0.15262985,  0.61933969, -1.25173629 ,-0.06990096 , 1.40962036,
+    #                      0.47323309 ,-1.40968015 ,-1.18388217 , 1.93881627, -0.35910843 , 0.33075125,
+    #                      0.02806573 , 0.08024676 ,-1.28481063 , 0.07152657 ,-1.16128504 , 1.290264,
+    #                      0.60666654 , 1.13796111 , 1.28576911, -0.13773673, -0.45522121 , 0.13978074,
+    #                      0.31452089 , 0.65256346 , 0.73105478, -0.8327662 ,  0.41297878 ,-1.85392176,
+    #                      0.24883293]) # Initial weights found by Adamm optimizer for 10 inner iterations (45 weights)
+    weights = sampleWeights(net, threshold=1.e4)
     print('Initial Loss', f(weights))
     print('Initial Loss Derivative', lg.norm(df(weights)))
 

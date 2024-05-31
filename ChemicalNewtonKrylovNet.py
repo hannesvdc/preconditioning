@@ -8,18 +8,13 @@ import matplotlib.pyplot as plt
 from autograd import jacobian
 
 import api.NewtonKrylovRecursiveNet as recnet
-import api.Scheduler as sch
-import api.algorithms.Adam as adam
-
 import Deterministic_PDE as pde
 
 def setupNeuralNetwork(outer_iterations=3, inner_iterations=4, baseweight=4.0):
     # Define the Objective Function Psi
-    d2 = 0.06
-    M = 200
-    T = 5.e-4 # 5dt
+    parameters = {'d2': 0.06, 'M': 200, 'T': 5.e-4}
     def psi(x):
-        xp = pde.PDE_Timestepper(x, T, M, d2, verbose=False) # Use PDE first
+        xp = pde.PDE_Timestepper(x, parameters['T'], parameters['M'], parameters['d2'], verbose=False) # Use PDE first
         return x - xp
     
     # Sample Random Initial Conditions
@@ -35,7 +30,7 @@ def setupNeuralNetwork(outer_iterations=3, inner_iterations=4, baseweight=4.0):
     f = lambda w: net.loss(w)
     df = jacobian(f)
 
-    return net, f, df, x0_data, T
+    return net, f, df, x0_data, parameters
 
 def sampleWeights(net):
     rng = rd.RandomState()
@@ -46,7 +41,7 @@ def sampleWeights(net):
     return weights
 
 def trainNKNetBFGS():
-    net, f, df, _, T = setupNeuralNetwork(outer_iterations=2, inner_iterations=10)
+    net, f, df, _, parameters = setupNeuralNetwork(outer_iterations=2, inner_iterations=10)
     weights = sampleWeights(net)
     print('Initial Loss', f(weights))
     print('Initial Loss Derivative', lg.norm(df(weights)))
@@ -81,16 +76,16 @@ def trainNKNetBFGS():
     plt.semilogy(x_axis, grad_norms, label='Loss Gradient')
     plt.xlabel('Epoch')
     plt.suptitle('Chemical Reaction Newton-Krylov Neural Network')
-    plt.title(r'Inner Iterations = ' + str(net.inner_iterations) + r',  $T$ = ' + str(T))
+    plt.title(r'Inner Iterations = ' + str(net.inner_iterations) + r',  $T$ = ' + str(parameters['T']))
     plt.legend()
     plt.show()
 
 def testNewtonKrylovNet():
     # Setup the network, weights obtained by BFGS training (subroutine above)
-    M = 200
-    net, _,  _, x0_data, T = setupNeuralNetwork(outer_iterations=2, inner_iterations=4)
+    net, _,  _, x0_data, parameters = setupNeuralNetwork(outer_iterations=2, inner_iterations=4)
     weights = np.array([-1.919e+00, -2.155e+00, -1.756e+00, -2.206e+00, -1.996e+00,
                         -1.641e+00,  2.354e+00,  2.453e+00,  2.566e+00,  2.265e+00,])
+    M = parameters['M']
     
     # Run all data througgh the neural network
     N_data = x0_data.shape[1]
@@ -120,7 +115,7 @@ def testNewtonKrylovNet():
     plt.xlim((-0.5,n_outer_iterations + 0.5))
     plt.ylim((0.1*min(np.min(avg_errors), np.min(avg_errors)),70))
     plt.suptitle('Chemical Reaction Newton-Krylov Neural Network')
-    plt.title(r'Inner Iterations = ' + str(net.inner_iterations) + r',  $T$s = ' + str(T))
+    plt.title(r'Inner Iterations = ' + str(net.inner_iterations) + r',  $T$s = ' + str(parameters['T']))
     plt.legend()
 
     # Plot the computed steady-state solution
@@ -139,7 +134,7 @@ def testNewtonKrylovNet():
     plt.plot(x_array, V, label=r'$V(x)$', color='blue')
     plt.xlabel(r'$x$')
     plt.suptitle('Steady-State Newton-Krylov Neural Network')
-    plt.title(r'Inner Iterations = ' + str(net.inner_iterations) + r',  $T$ = ' + str(T))
+    plt.title(r'Inner Iterations = ' + str(net.inner_iterations) + r',  $T$ = ' + str(parameters['T']))
     plt.legend()
     plt.show()
 
