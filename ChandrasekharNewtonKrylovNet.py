@@ -83,7 +83,7 @@ def trainNKNetAdam():
     plt.show()
 
 def trainNKNetBFGS():
-    net, f, df = setupRecNet(outer_iterations=3, inner_iterations=4)
+    net, f, df = setupRecNet(outer_iterations=3, inner_iterations=10)
     #weights = np.array([-1.93181061,  0.18862427 ,-0.36436414,  1.75800653,  0.81753954 ,-2.90153424,
     #                    1.11418358 ,-1.1968051 ,  0.35490947 , 0.77058088]) # Initial weights found by Adamm optimizer for 4 inner iterations (10 weights)
     # weights = np.array([-1.24055358 ,-0.4106254  , 0.53113248 ,-2.16433248 , 0.65725721 ,-0.21630475,
@@ -137,8 +137,10 @@ def testNKNet():
     # Setup the network and load the weights
     inner_iterations = 4
     net, _, _ = setupRecNet(outer_iterations=3, inner_iterations=inner_iterations)
-    weights = np.array([ -5.65489262 , 15.67488836 ,  9.83137438 , 10.87824758 , 18.88908299,
-                        -0.459666 ,  -12.37188497 ,-26.59916135 , -3.32415882 ,  3.3055943 ]) # Adam + BFGS refinement for 4 inner iterations
+    weights = np.array([  -1.37418947 ,  -0.14445959 ,   2.51583727 , -17.92557257 ,-112.11663472,
+                            44.1241637   , -4.88042119,  -50.64821349  , 18.05257709  , -0.54452882])
+    #weights = np.array([ -5.65489262 , 15.67488836 ,  9.83137438 , 10.87824758 , 18.88908299,
+    #                    -0.459666 ,  -12.37188497 ,-26.59916135 , -3.32415882 ,  3.3055943 ]) # Adam + BFGS refinement for 4 inner iterations
     # weights = np.array([-1.03271415, -0.7997393,  -5.9540853,   0.61832089,  0.55027126, -1.09914459,
     #                     -2.16602657,  4.75832453,  1.96480265, -0.7004273,  -0.73600679, -2.96956567,
     #                     -2.41837951,  0.23372672, -1.85472313,  1.45412704, -0.02829014, -0.47087389,
@@ -190,7 +192,8 @@ def testNKNet():
     plt.ylabel('Error')
     plt.xlim((-0.5,n_outer_iterations + 0.5))
     plt.ylim((0.1*min(np.min(avg_nk_errors), np.min(avg_errors)),70))
-    plt.title(r'Newton-Krylov Neural Net')
+    plt.suptitle(r'Newton-Krylov Neural Net')
+    plt.title('Inner Iterations = ' + str(net.inner_iterations))
     plt.legend()
     plt.show()
 
