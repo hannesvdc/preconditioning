@@ -44,7 +44,7 @@ def sampleWeights(net):
     return weights
 
 def trainNKNetBFGS():
-    net, f, df, _, parameters = setupNeuralNetwork(outer_iterations=2, inner_iterations=10)
+    net, f, df, _, parameters = setupNeuralNetwork(outer_iterations=2, inner_iterations=4)
     weights = sampleWeights(net)
     print('Initial Loss', f(weights))
     print('Initial Loss Derivative', lg.norm(df(weights)))

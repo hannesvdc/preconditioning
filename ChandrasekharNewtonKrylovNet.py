@@ -176,7 +176,6 @@ def testNKNet():
 
     # Average the errors
     avg_errors = np.average(errors, axis=0)
-    min_errors = np.min(errors, axis=0)
     avg_nk_errors = np.average(nk_errors, axis=0)
 
     # Plot the errors
@@ -184,9 +183,8 @@ def testNKNet():
     k_axis = np.linspace(0, n_outer_iterations, n_outer_iterations+1)
     rect = mpl.patches.Rectangle((net.outer_iterations+0.5, 1.e-8), 7.5, 70, color='gray', alpha=0.2)
     ax.add_patch(rect)
-    plt.semilogy(k_axis, avg_errors, label='Averaged Neural Network Output Error', linestyle='--', marker='d')
-    plt.semilogy(k_axis, min_errors, label='Minimal Neural Network Output Error', linestyle='--', marker='d')
-    plt.semilogy(k_axis, avg_nk_errors, label='Averaged Scipy Newton-Krylov Error', linestyle='--', marker='d')
+    plt.semilogy(k_axis, avg_errors, label='Averaged Neural Network Output Error', linestyle='--', marker='d', color='C1')
+    plt.semilogy(k_axis, avg_nk_errors, label='Averaged Scipy Newton-Krylov Error', linestyle='--', marker='d', color='C0')
     plt.xticks(np.linspace(0, n_outer_iterations, n_outer_iterations+1))
     plt.xlabel(r'# Outer Iterations $k$')
     plt.ylabel('Error')
