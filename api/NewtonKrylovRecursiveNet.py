@@ -3,14 +3,14 @@ import autograd.numpy as np
 import api.internal.SuperStructure as ss
 
 class NewtonKrylovSuperStructure(ss.SuperStructure):
-    def __init__(self, f, data, outer_iterations, inner_iterations, baseweight=4.0):
+    def __init__(self, F, data, outer_iterations, inner_iterations, baseweight=4.0):
         super().__init__()
 
         self.eps = 1.e-8
 
-        self.f = f
-        self.df_v = lambda x, v, fx: (self.f(x + self.eps*v) - fx) / self.eps
-        self.F = lambda x, v, fx: self.df_v(x, v, fx) - fx
+        self.F = F
+        self.dF_v = lambda x, v, Fx: (self.F(x + self.eps*v) - Fx) / self.eps
+        self.f = lambda x, v, Fx: self.dF_v(x, v, Fx) + Fx
 
         self.data = data
         self.N_data = data.shape[1]
@@ -27,8 +27,8 @@ class NewtonKrylovSuperStructure(ss.SuperStructure):
 
             for k in range(self.outer_iterations): # do self.outer_iterations iterations
                 loss_weight = self.baseweight**(k+1)
-                x = self.inner_forward(x, weights) # x = x_k = solution to self.f(x) = 0
-                total_loss += loss_weight * self.stable_normsq(self.f(x))
+                x = self.inner_forward(x, weights) # x = x_k = solution to self.F(x) = 0
+                total_loss += loss_weight * self.stable_normsq(self.F(x))
 
         averaged_loss = total_loss / self.N_data
         return averaged_loss
@@ -38,19 +38,19 @@ class NewtonKrylovSuperStructure(ss.SuperStructure):
         samples = [x]
 
         for _ in range(n_outer_iterations): # do self.outer_iterations iterations
-            x = self.inner_forward(x, weights) # x = x_k = solution to self.f(x) = 0
+            x = self.inner_forward(x, weights) # x = x_k = solution to self.F(x) = 0
             samples.append(x)
         return samples
     
     # One complete inner iterations
     def inner_forward(self, xk, weights):
-        y = np.zeros_like(xk) # y stores the variable that solves F(xk, y) = 0 (i.e. the linear system)
-        f_value = self.f(xk)
-        V = np.array([self.F(xk, y, f_value)]).transpose() # v_0
+        y = np.zeros_like(xk) # y stores the variable that solves f(xk, y) = 0 (i.e. the linear system)
+        F_value = self.F(xk)
+        V = np.array([self.f(xk, y, F_value)]).transpose() # v_0
 
         for n in range(1, self.inner_iterations): # do inner_iterations-1 function evaluations
             yp = self._N(y, V, n, weights)
-            v = self.F(xk, yp, f_value) # v_n
+            v = self.f(xk, yp, F_value) # v_n
             V = np.append(V, np.array([v]).transpose(), axis=1)
 
         yp = self._N(y, V, self.inner_iterations, weights)
