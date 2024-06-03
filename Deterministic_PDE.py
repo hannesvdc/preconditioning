@@ -21,7 +21,10 @@ def f_fast(x, d1, d2, M):
 	return np.concatenate((f1, f2))
 
 	
-def PDE_Timestepper(x, T, M, d2, verbose=False):
+def PDE_Timestepper(x, parameters, verbose=False):
+	M = parameters['M']
+	T = parameters['T']
+	d2 = parameters['d2']
 	d1 = 5.e-4
 	dt = 1.e-4
 	N = int(T / dt)
@@ -48,11 +51,12 @@ def findFixedPointNK():
 	T = 0.05
 	d1 = 5.e-4
 	d2 = 0.06
+	parameters = {'M': M, 'T': T, 'd2': d2}
 
 	# Define Matrix-Free Helper Functions
 	def psi(x):
 		print('Evaluating Psi')
-		x_new = PDE_Timestepper(x, T, M, d2)
+		x_new = PDE_Timestepper(x, parameters)
 
 		return x - x_new
 	
@@ -114,20 +118,22 @@ def Plot_PDE_Solution():
 	T = 100.0
 	M = 200
 	d2 = 0.06
+	parameters = {'M': M, 'T': T, 'd2': d2}
 
 	eps = 0.01
 	U = 2.0*np.ones(M)  + eps*rng.normal(0.0, 1.0, M)
 	V = 0.75*np.ones(M) + eps*rng.normal(0.0, 1.0, M)
 	x = np.concatenate((U, V))
 
-	x = PDE_Timestepper(x, T, M, d2, verbose=True)
+	x = PDE_Timestepper(x, parameters, verbose=True)
 	U = x[0:M]
 	V = x[M:]
 
 	T_psi = 0.05
+	psi_parameters = {'M': M, 'T': T_psi, 'd2': d2}
 	def psi(x):
 		print('Evaluating Psi')
-		x_new = PDE_Timestepper(x, T_psi, M, d2)
+		x_new = PDE_Timestepper(x, psi_parameters)
 
 		return x - x_new
 	print('psi PDE', lg.norm(psi(np.concatenate((U, V)))))

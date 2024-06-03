@@ -17,7 +17,7 @@ def setupNeuralNetwork(outer_iterations=3, inner_iterations=4, baseweight=4.0):
     T = 5.e-4
     parameters = {'d2': d2, 'M': M, 'T': T}
     def psi(x):
-        xp = pde.PDE_Timestepper(x, parameters['T'], parameters['M'], parameters['d2'], verbose=False) # Use PDE first
+        xp = pde.PDE_Timestepper(x, parameters) # Use PDE first
         return x - xp
     
     # Sample Random Initial Conditions
