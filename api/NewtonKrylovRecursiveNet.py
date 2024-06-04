@@ -8,9 +8,9 @@ class NewtonKrylovSuperStructure(ss.SuperStructure):
 
         self.eps = 1.e-8
 
-        self.F = F
+        self.F = F # the function we want to solve
         self.dF_v = lambda x, v, Fx: (self.F(x + self.eps*v) - Fx) / self.eps
-        self.f = lambda x, v, Fx: self.dF_v(x, v, Fx) + Fx
+        self.f = lambda x, v, Fx: self.dF_v(x, v, Fx) + Fx # The linear system during every outer iteration
 
         self.data = data
         self.N_data = data.shape[1]
