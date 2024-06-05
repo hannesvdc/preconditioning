@@ -13,7 +13,6 @@ class BFGSOptimizer:
         self.losses = []
         self.gradient_norms = []
 
-
     def optimize(self, x0, tolerance=None, maxiter=1000):
         x = np.copy(x0)
         l = self.f(x)
