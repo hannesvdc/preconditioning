@@ -10,11 +10,10 @@ from autograd import jacobian
 import api.NewtonKrylovRecursiveNet as recnet
 import Deterministic_PDE as pde
 
-def setupNeuralNetwork(outer_iterations=3, inner_iterations=4, baseweight=4.0):
+def setupNeuralNetwork(T, outer_iterations=3, inner_iterations=4, baseweight=4.0):
     # Define the Objective Function Psi
     M = 200
     d2 = 0.06
-    T = 5.e-4
     parameters = {'d2': d2, 'M': M, 'T': T}
     def psi(x):
         xp = pde.PDE_Timestepper(x, parameters) # Use PDE first
@@ -43,8 +42,8 @@ def sampleWeights(net):
     weights = 0.0*rng.normal(size=n_weights)
     return weights
 
-def trainNKNetBFGS():
-    net, f, df, _, parameters = setupNeuralNetwork(outer_iterations=2, inner_iterations=4)
+def trainNKNetBFGS(T, n_inner):
+    net, f, df, _, parameters = setupNeuralNetwork(T=T, outer_iterations=2, inner_iterations=n_inner)
     weights = sampleWeights(net)
     print('Initial Loss', f(weights))
     print('Initial Loss Derivative', lg.norm(df(weights)))
@@ -72,6 +71,11 @@ def trainNKNetBFGS():
     print('Minimzed Loss', f(weights), df(weights))
     print('Minimization Result', result)
 
+    # Storing weights
+    directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/R2N2/NKNet/'
+    filename = 'Weights_BFGS_T=' + str(T) + '_inner_iterations=' + str(n_inner) + '_.npy'
+    np.save(directory + filename, weights)
+
     # Post-processing
     x_axis = np.arange(len(losses))
     plt.grid(linestyle = '--', linewidth = 0.5)
@@ -79,7 +83,7 @@ def trainNKNetBFGS():
     plt.semilogy(x_axis, grad_norms, label='Loss Gradient')
     plt.xlabel('Epoch')
     plt.suptitle('Chemical Reaction Newton-Krylov Neural Network')
-    plt.title(r'Inner Iterations = ' + str(net.inner_iterations) + r',  $T$ = ' + str(parameters['T']))
+    plt.title(r'Inner Iterations = ' + str(n_inner) + r',  $T$ = ' + str(parameters['T']))
     plt.legend()
     plt.show()
 
@@ -90,7 +94,7 @@ def testNewtonKrylovNet():
                         -1.641e+00,  2.354e+00,  2.453e+00,  2.566e+00,  2.265e+00,]) # inner = 4 BFGS
     M = parameters['M']
     
-    # Run all data througgh the neural network
+    # Run all data through the neural network
     N_data = x0_data.shape[1]
     n_outer_iterations = 10
     errors = np.zeros((N_data, n_outer_iterations+1))
@@ -143,5 +147,7 @@ def testNewtonKrylovNet():
 
 
 if __name__ == '__main__':
-    trainNKNetBFGS()
+    T = 5.e-4
+    n_inner = 10
+    trainNKNetBFGS(T, n_inner)
     #testNewtonKrylovNet()
