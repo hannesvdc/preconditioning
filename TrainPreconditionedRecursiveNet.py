@@ -9,7 +9,7 @@ from autograd import jacobian
 
 import api.KrylovRecursiveNet as recnet
 import api.Scheduler as sch
-import algorithms.Adam as adam
+import api.algorithms.Adam as adam
 
 
 # General setup routine shared by all training routines

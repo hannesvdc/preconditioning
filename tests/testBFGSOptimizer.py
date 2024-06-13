@@ -7,7 +7,7 @@ import autograd.numpy.random as rd
 
 from autograd import jacobian
 
-import algorithms.BFGS as bfgs
+import api.algorithms.BFGS as bfgs
 import api.Scheduler as scheduler
 
 def quadraticTest():

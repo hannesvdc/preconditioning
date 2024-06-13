@@ -8,8 +8,8 @@ from autograd import jacobian
 
 import api.KrylovRecursiveNet as recnet
 import api.Scheduler as sch
-import algorithms.Adam as adam
-import algorithms.BFGS as bfgs
+import api.algorithms.Adam as adam
+import api.algorithms.BFGS as bfgs
 
 def is_pos_def(B):
     return np.all(lg.eigvals(B) > 0)
