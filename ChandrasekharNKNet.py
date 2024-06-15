@@ -82,11 +82,14 @@ def trainNKNetAdam():
     plt.legend()
     plt.show()
 
-def testNKNet():
+    return weights
+
+def testNKNet(weights=None):
     # Setup the network and load the weights. All training done using BFGS routine above.
-    net_4, _, _, H = setupRecNet(outer_iterations=3, inner_iterations=4)
-    weights_4 = np.array([-1.84575363,  0.70383152,  1.22956814, -0.08314529,  1.01171562,  0.66138989,
-                          -1.52606657, -1.22742543, -0.86158424,  0.32183093])
+    net, _, _, H = setupRecNet(outer_iterations=3, inner_iterations=4)
+    if weights is None:
+        weights = np.array([-1.84575363,  0.70383152,  1.22956814, -0.08314529,  1.01171562,  0.66138989,
+                            -1.52606657, -1.22742543, -0.86158424,  0.32183093])
 
     # Generate test data. Same distribution as training data. Test actual training data next
     m = 10
@@ -99,7 +102,7 @@ def testNKNet():
     errors_4     = np.zeros((N_data, n_outer_iterations+1))
     nk_errors_4  = np.zeros((N_data, n_outer_iterations+1))
 
-    samples_4  = net_4.forward(x0_data, weights_4, n_outer_iterations)
+    samples_4  = net.forward(x0_data, weights, n_outer_iterations)
     for n in range(N_data):
         x0 = x0_data[:,n]
 
@@ -121,7 +124,7 @@ def testNKNet():
     # Plot the errors
     fig, ax = plt.subplots()  
     k_axis = np.linspace(0, n_outer_iterations, n_outer_iterations+1)
-    rect = mpl.patches.Rectangle((net_4.outer_iterations+0.5, 1.e-8), 7.5, 70, color='gray', alpha=0.2)
+    rect = mpl.patches.Rectangle((net.outer_iterations+0.5, 1.e-8), 7.5, 70, color='gray', alpha=0.2)
     ax.add_patch(rect)
     plt.semilogy(k_axis, avg_errors_4, label=r'Newton-Krylov Network with $4$ Inner Iterations', linestyle='--', marker='d')
     plt.semilogy(k_axis, avg_nk_errors_4, label=r'Scipy with $4$ Krylov Vectors', linestyle='--', marker='d')
@@ -135,5 +138,5 @@ def testNKNet():
     plt.show()
 
 if __name__ == '__main__':
-    #trainNKNetAdam()
-    testNKNet()
+    weights = trainNKNetAdam()
+    testNKNet(weights)
