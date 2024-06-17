@@ -16,6 +16,7 @@ class AdamOptimizer:
         # Keep history of training
         self.losses = []
         self.gradient_norms = []
+        self.lastweights = None
 
     def getName(self):
         return 'Adam'
@@ -41,6 +42,7 @@ class AdamOptimizer:
             mp = m / (1.0 - self.beta1**(n_iterations + 1))
             mv = v / (1.0 - self.beta2**(n_iterations + 1))
 
+            self.lastweights = x
             x = x - alpha * mp / (np.sqrt(mv) + self.epsilon)
             l = self.f(x)
             g = self.df(x)

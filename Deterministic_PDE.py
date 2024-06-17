@@ -1,9 +1,7 @@
 import autograd.numpy as np
-import autograd.numpy.linalg as lgs
 import numpy.random as rd
 import matplotlib.pyplot as plt
 import numpy as onp
-import scipy.optimize as opt
 
 from api.algorithms.NewtonKrylov import *
 

@@ -2,6 +2,7 @@ import autograd.numpy as np
 import autograd.numpy.random as rd
 import autograd.numpy.linalg as lg
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import scipy.optimize as opt
 import scipy.optimize.nonlin as nl
 
@@ -169,8 +170,8 @@ def testNKNet(weights=None):
     # Plot the errors
     fig, ax = plt.subplots()  
     k_axis = np.linspace(0, n_outer_iterations, n_outer_iterations+1)
-    #rect = mpl.patches.Rectangle((net.outer_iterations+0.5, 1.e-8), 7.5, 70, color='gray', alpha=0.2)
-    #ax.add_patch(rect)
+    rect = mpl.patches.Rectangle((net.outer_iterations+0.5, 1.e-8), 7.5, 70, color='gray', alpha=0.2)
+    ax.add_patch(rect)
     plt.semilogy(k_axis, avg_errors, label=r'Newton-Krylov Neural Net with $4$ Inner Iterations', linestyle='--', marker='d')
     plt.semilogy(k_axis, avg_nk_errors, label=r'Scipy newton_krylov with $4$ Krylov Vectors', linestyle='--', marker='d')
     plt.xticks(np.linspace(0, n_outer_iterations, n_outer_iterations+1))

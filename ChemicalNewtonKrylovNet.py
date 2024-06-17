@@ -1,13 +1,12 @@
 import autograd.numpy as np
 import autograd.numpy.linalg as lg
 import autograd.numpy.random as rd
-import scipy.optimize as opt
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 from autograd import jacobian
 
-import api.NewtonKrylovRecursiveNet as recnet
+import api.FastNewtonKrylovNeuralNet as recnet
 import api.Scheduler as sch
 import api.algorithms.Adam as adam
 import Deterministic_PDE as pde
@@ -19,7 +18,7 @@ def setupNeuralNetwork(T, outer_iterations=3, inner_iterations=4, baseweight=4.0
     parameters = {'d2': d2, 'M': M, 'T': T}
     def psi(x):
         xp = pde.PDE_Timestepper(x, parameters) # Use PDE first
-        return x - xp
+        return x - xp # approx \partial_T phi_pde(x)
     
     # Sample Random Initial Conditions
     seed = 100
@@ -31,35 +30,32 @@ def setupNeuralNetwork(T, outer_iterations=3, inner_iterations=4, baseweight=4.0
     x0_data = np.array([x0,]*N_data).transpose() + rng.normal(0.0, 1.0, size=(2*M, N_data))
 
     # Setup classes for training
-    net = recnet.NewtonKrylovSuperStructure(psi, x0_data, outer_iterations, inner_iterations, baseweight=baseweight)
-    f = lambda w: net.loss(w)
+    net = recnet.NewtonKrylovNetwork(psi, outer_iterations, inner_iterations, baseweight=baseweight)
+    f = lambda w: net.loss(x0_data, w)
     df = jacobian(f)
 
-    return net, f, df, x0_data, parameters
+    return net, f, df, x0_data, parameters, psi
 
-def sampleWeights(net):
+def sampleWeights(loss_fn, n_inner):
     rng = rd.RandomState()
-    inner_iterations = net.inner_iterations
+    inner_iterations = n_inner
     n_weights = (inner_iterations * (inner_iterations + 1) ) // 2
 
     while True:
         weights = rng.normal(scale=0.1, size=n_weights)
-        l = net.loss(weights)
+        l = loss_fn(weights)
         if l < 1.e4:
             return weights
         
 def trainNKNetAdam(T, n_inner):
-    net, f, df, _, parameters = setupNeuralNetwork(T=T, outer_iterations=2, inner_iterations=n_inner)
-    #weights = sampleWeights(net)
-    directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/R2N2/NKNet/'
-    filename = 'Weights_BFGS_T=' + str(T) + '_inner_iterations=' + str(n_inner) + '_.npy'
-    weights = np.load(directory + filename)
-    print('Initial Loss', f(weights))
-    print('Initial Loss Derivative', lg.norm(df(weights)))
+    _, loss_fn, d_loss_fn, _, parameters, _ = setupNeuralNetwork(T=T, outer_iterations=2, inner_iterations=n_inner)
+    weights = sampleWeights(loss_fn, n_inner)
+    print('Initial Loss', loss_fn(weights))
+    print('Initial Loss Derivative', lg.norm(d_loss_fn(weights)))
 
     # Setup the optimizer
-    scheduler = sch.PiecewiseConstantScheduler({0:  1.e-3, 5000: 1.e-4, 10000: 1.e-5})
-    optimizer = adam.AdamOptimizer(f, df, scheduler=scheduler)
+    scheduler = sch.PiecewiseConstantScheduler({0: 1.e-2, 500: 1.e-3})
+    optimizer = adam.AdamOptimizer(loss_fn, d_loss_fn, scheduler=scheduler)
     print('Initial weights', weights)
 
     # Do the training
@@ -68,6 +64,7 @@ def trainNKNetAdam(T, n_inner):
         weights = optimizer.optimize(weights, n_epochs=epochs)
     except KeyboardInterrupt: # If Training has converged well enough with Adam, the user can stop manually
         print('Aborting Training. Plotting Convergence')
+        weights = optimizer.lastweights
     print('Done Training at', len(optimizer.losses), 'epochs. Weights =', weights)
     losses = np.array(optimizer.losses)
     grad_norms = np.array(optimizer.gradient_norms)
@@ -88,74 +85,21 @@ def trainNKNetAdam(T, n_inner):
     plt.legend()
     plt.show()
 
-def refineNKNetBFGS(T, n_inner):
-    _, f, df, _, parameters = setupNeuralNetwork(T=T, outer_iterations=2, inner_iterations=n_inner)
-    directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/R2N2/NKNet/'
-    filename = 'Weights_Adam_T=' + str(T) + '_inner_iterations=' + str(n_inner) + '_.npy'
-    weights = np.load(directory + filename)
-    print('Initial Loss', f(weights))
-    print('Initial Loss Derivative', lg.norm(df(weights)))
+    return weights
 
-    losses = []
-    grad_norms = []
-    epoch_counter = [0]
-    def callback(x):
-        print('\nEpoch #', epoch_counter[0])
-        l = f(x)
-        g = lg.norm(df(x))
-        losses.append(l)
-        grad_norms.append(g)
-        epoch_counter[0] += 1
-        print('Loss =', l)
-        print('Gradient Norm =', g)
-        print('Weights', x)
-
-    epochs = 5000
-    method = 'L-BFGS-B'
-    try:
-        result = opt.minimize(f, weights, jac=df, method=method,
-                                              options={'maxiter': epochs, 'gtol': 1.e-100}, 
-                                              callback=callback)
-    except: # If trained well enough or opt.minimize throws an exception
-        print('Aborting Training. Plotting Convergence')
-    weights = result.x
-    print('Minimzed Loss', f(weights), df(weights))
-    print('Minimization Result', result)
-
-    # Storing weights
-    directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/R2N2/NKNet/'
-    filename = 'Weights_BFGS_T=' + str(T) + '_inner_iterations=' + str(n_inner) + '_.npy'
-    np.save(directory + filename, weights)
-
-    # Post-processing
-    x_axis = np.arange(len(losses))
-    plt.grid(linestyle = '--', linewidth = 0.5)
-    plt.semilogy(x_axis, losses, label='Training Loss')
-    plt.semilogy(x_axis, grad_norms, label='Loss Gradient')
-    plt.xlabel('Epoch')
-    plt.suptitle('Chemical Reaction Newton-Krylov Neural Network')
-    plt.title(r'Inner Iterations = ' + str(n_inner) + r',  $T$ = ' + str(parameters['T']))
-    plt.legend()
-    plt.show()
-
-def testNewtonKrylovNet():
+def testNewtonKrylovNet(T, n_inner, weights):
     # Setup the network, weights obtained by BFGS training (subroutine above)
-    net, _,  _, x0_data, parameters = setupNeuralNetwork(outer_iterations=2, inner_iterations=4)
-    weights = np.array([-1.919e+00, -2.155e+00, -1.756e+00, -2.206e+00, -1.996e+00,
-                        -1.641e+00,  2.354e+00,  2.453e+00,  2.566e+00,  2.265e+00,]) # inner = 4 BFGS
+    net, _,  _, x0_data, parameters, psi = setupNeuralNetwork(T, outer_iterations=2, inner_iterations=n_inner)
     M = parameters['M']
     
     # Run all data through the neural network
     N_data = x0_data.shape[1]
     n_outer_iterations = 10
+    samples = net.forward(x0_data, weights, n_outer_iterations)
     errors = np.zeros((N_data, n_outer_iterations+1))
     for n in range(N_data):
-        print('n =', n)
-        x0 = x0_data[:,n]
-        samples = net.forward(x0, weights, n_outer_iterations)
-
-        for k in range(len(samples)):
-            err = lg.norm(net.f(samples[k]))
+        for k in range(samples.shape[1]):
+            err = lg.norm(psi(samples[:,k,n]))
             errors[n,k] = err
 
     # Average the errors
@@ -173,17 +117,12 @@ def testNewtonKrylovNet():
     plt.xlim((-0.5,n_outer_iterations + 0.5))
     plt.ylim((0.1*min(np.min(avg_errors), np.min(avg_errors)),70))
     plt.suptitle('Chemical Reaction Newton-Krylov Neural Network')
-    plt.title(r'Inner Iterations = ' + str(net.inner_iterations) + r',  $T$s = ' + str(parameters['T']))
+    plt.title(r'Inner Iterations = ' + str(net.inner_iterations) + r',  $T$s = ' + str(T))
     plt.legend()
 
     # Plot the computed steady-state solution
     index = np.argwhere(errors == np.min(errors))[0]
-    print('index=', index)
-    data_index = index[0]
-    outer_index = index[1]
-    data_point = x0_data[:, data_index]
-    samples = net.forward(data_point, weights, n_outer_iterations)
-    x_ss = samples[outer_index]
+    x_ss = samples[:,10,index]
     U = x_ss[0:M]; V = x_ss[M:]
 
     x_array = np.linspace(0.0, 1.0, M)
@@ -199,6 +138,6 @@ def testNewtonKrylovNet():
 
 if __name__ == '__main__':
     T = 5.e-4
-    n_inner = 25
-    trainNKNetAdam(T, n_inner)
-    #testNewtonKrylovNet()
+    n_inner = 4
+    weights = trainNKNetAdam(T, n_inner)
+    testNewtonKrylovNet(T, n_inner, weights)
