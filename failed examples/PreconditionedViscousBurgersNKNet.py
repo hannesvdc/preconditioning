@@ -4,14 +4,19 @@ import autograd.numpy.linalg as lg
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import scipy.optimize as opt
-import scipy.optimize.nonlin as nl
 
 from autograd import jacobian
 
-import api.NewtonKrylovNeuralNet as nknet
+import api.PreconditionedNewtonKrylovNeuralNet as nknet
 import api.Scheduler as sch
 import api.algorithms.Adam as adam
+import api.algorithms.GradientDescent as gd
 
+
+# Dislaimer: Although theoretically correct, the below preconditioned NKNet
+# does not converge to a local minimum because the Jacobians have condition
+# number larger than 10^6, thereby losing all precicion in finite-differences
+# approximations.
 N = 10
 dx = 1.0 / N
 D = 0.1
@@ -74,47 +79,49 @@ def solvePDE():
 
 # General setup routine shared by all training routines
 def setupRecNet(outer_iterations=3, inner_iterations=4, baseweight=4.0):
-
-    def F(u): # u is a vector with 9 components
-        v = np.vstack([left_bc * np.ones(u.shape[1]), u, right_bc * np.ones(u.shape[1])])
-        v_left  = np.roll(v,  1, axis=0)
-        v_right = np.roll(v, -1, axis=0)
+    # Function elementwise to compute jacobians
+    def _F(u, nu): # u is a vector with 9 components
+        v = np.hstack([left_bc , u, right_bc])
+        v_left  = np.roll(v,  1)
+        v_right = np.roll(v, -1)
 
         flux = 0.5 * (0.5*v_right**2 - 0.5*v_left**2) / dx
-        diff = 0.5 * D * (v_right - 2.0*v + v_left) / dx**2
-        return (-flux + diff)[1:N,:]
+        diff = 0.5 * nu * (v_right - 2.0*v + v_left) / dx**2
+        return (-flux + diff)[1:N]
+    F = lambda u: _F(u, D)
+    dF = jacobian(F) # M is the inverse of dF
 
     # Sample data - the inittial conditions x_0,i, i = data index
+    seed = 100
     N_data = 1000
-    rng = rd.RandomState()
+    rng = rd.RandomState(seed=seed)
     x0_data = rng.normal(np.linspace(left_bc, right_bc, N+1)[1:N,np.newaxis], scale=0.2, size=(N-1, N_data))
 
-    # Setup classes for training
-    net = nknet.NewtonKrylovNetwork(F, outer_iterations, inner_iterations, baseweight=baseweight)
+    net = nknet.PrecondtionedNewtonKrylovNetwork(F, dF, outer_iterations, inner_iterations, baseweight=baseweight)
     loss_fn = lambda w: net.loss(x0_data, w)
     d_loss_fn = jacobian(loss_fn)
 
-    return net, loss_fn, d_loss_fn, F
+    return net, loss_fn, d_loss_fn
 
-def sampleWeights(net, **kwargs):
+def sampleWeights(net, loss_fn, threshold):
     inner_iterations = net.inner_iterations
     n_weights = (inner_iterations * (inner_iterations + 1) ) // 2
     return np.zeros(n_weights)
         
 # Only used to train Newton-Krylov network with 10 inner iterations
 def trainNKNetAdam():
-    net, loss_fn, d_loss_fn, _ = setupRecNet(outer_iterations=3, inner_iterations=4)
-    weights = sampleWeights(net, loss_fn=loss_fn, threshold=1.e10)
+    net, loss_fn, d_loss_fn = setupRecNet(outer_iterations=3, inner_iterations=4)
+    weights = sampleWeights(net, loss_fn=loss_fn, threshold=1.e3)
     print('Initial Loss', loss_fn(weights))
     print('Initial Loss Derivative', lg.norm(d_loss_fn(weights)))
 
     # Setup the optimizer
-    scheduler = sch.PiecewiseConstantScheduler({0: 1.e-2, 2500: 1.e-3})
+    scheduler = sch.PiecewiseConstantScheduler({0: 1.e-3})
     optimizer = adam.AdamOptimizer(loss_fn, d_loss_fn, scheduler=scheduler)
     print('Initial weights', weights)
 
     # Do the training
-    epochs = 3000
+    epochs = 15000
     try:
         weights = optimizer.optimize(weights, n_epochs=epochs)
     except KeyboardInterrupt: # If Training has converged well enough with Adam, the user can stop manually
@@ -138,7 +145,7 @@ def trainNKNetAdam():
 
 def testNKNet(weights=None):
     # Setup the network and load the weights. All training done using BFGS routine above.
-    net, _, _, F = setupRecNet(outer_iterations=3, inner_iterations=4)
+    net, _, _ = setupRecNet(outer_iterations=3, inner_iterations=4)
 
     # Generate test data. Same distribution as training data. Test actual training data next
     N_data = 1000
@@ -148,7 +155,6 @@ def testNKNet(weights=None):
     # Run each rhs through the neural network
     n_outer_iterations = 10 # Does not need be the same as the number the network was trained on.
     errors    = np.zeros((N_data, n_outer_iterations+1))
-    nk_errors = np.zeros((N_data, n_outer_iterations+1))
 
     samples  = net.forward(x0_data, weights, n_outer_iterations)
     for n in range(N_data):
@@ -157,16 +163,8 @@ def testNKNet(weights=None):
             err = lg.norm(pde_rhs(samples[:,k,n]))
             errors[n,k] = err
 
-        for k in range(n_outer_iterations+1):
-            try:
-                x_out = opt.newton_krylov(pde_rhs, x0, rdiff=1.e-8, iter=k, maxiter=k, method='gmres', inner_maxiter=1, outer_k=0, line_search=None)
-            except nl.NoConvergence as e:
-                x_out = e.args[0]
-            nk_errors[n,k] = lg.norm(pde_rhs(x_out))
-
     # Average the errors
     avg_errors = np.average(errors, axis=0)
-    avg_nk_errors = np.average(nk_errors, axis=0)
 
     # Plot the errors
     fig, ax = plt.subplots()  
@@ -174,12 +172,11 @@ def testNKNet(weights=None):
     rect = mpl.patches.Rectangle((net.outer_iterations+0.5, 1.e-8), 7.5, 70, color='gray', alpha=0.2)
     ax.add_patch(rect)
     plt.semilogy(k_axis, avg_errors, label=r'Newton-Krylov Neural Net with $4$ Inner Iterations', linestyle='--', marker='d')
-    plt.semilogy(k_axis, avg_nk_errors, label=r'Scipy newton_krylov with $4$ Krylov Vectors', linestyle='--', marker='d')
     plt.xticks(np.linspace(0, n_outer_iterations, n_outer_iterations+1))
     plt.xlabel(r'# Outer Iterations $k$')
     plt.ylabel(r'$|F(x_k)|$')
     plt.xlim((-0.5,n_outer_iterations + 0.5))
-    plt.ylim((0.1*min(np.min(avg_errors), np.min(avg_nk_errors)),70))
+    plt.ylim((0.1*np.min(avg_errors),70))
     plt.title(r'Function Value $|F(x_k)|$')
     plt.legend()
     plt.show()

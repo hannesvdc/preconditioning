@@ -8,7 +8,7 @@ import scipy.optimize.nonlin as nl
 
 from autograd import jacobian
 
-import api.FastNewtonKrylovNeuralNet as nknet
+import api.NewtonKrylovNeuralNet as nknet
 import api.Scheduler as sch
 import api.algorithms.Adam as adam
 

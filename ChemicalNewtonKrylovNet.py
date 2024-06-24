@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 from autograd import jacobian
 
-import api.FastNewtonKrylovNeuralNet as recnet
+import api.NewtonKrylovNeuralNet as nknet
 import api.Scheduler as sch
 import api.algorithms.Adam as adam
 import Deterministic_PDE as pde
@@ -18,7 +18,7 @@ def setupNeuralNetwork(T, outer_iterations=3, inner_iterations=4, baseweight=4.0
     parameters = {'d2': d2, 'M': M, 'T': T}
     def psi(x):
         xp = pde.PDE_Timestepper(x, parameters) # Use PDE first
-        return x - xp # approx \partial_T phi_pde(x)
+        return x - xp # approx T * \partial_T phi_pde(x)
     
     # Sample Random Initial Conditions
     seed = 100
@@ -30,7 +30,7 @@ def setupNeuralNetwork(T, outer_iterations=3, inner_iterations=4, baseweight=4.0
     x0_data = np.array([x0,]*N_data).transpose() + rng.normal(0.0, 1.0, size=(2*M, N_data))
 
     # Setup classes for training
-    net = recnet.NewtonKrylovNetwork(psi, outer_iterations, inner_iterations, baseweight=baseweight)
+    net = nknet.NewtonKrylovNetwork(psi, outer_iterations, inner_iterations, baseweight=baseweight)
     f = lambda w: net.loss(x0_data, w)
     df = jacobian(f)
 
@@ -78,7 +78,7 @@ def trainNKNetAdam(T, n_inner):
     x_axis = np.arange(len(losses))
     plt.grid(linestyle = '--', linewidth = 0.5)
     plt.semilogy(x_axis, losses, label='Training Loss')
-    plt.semilogy(x_axis, grad_norms, label='Loss Gradient')
+    plt.semilogy(x_axis, grad_norms, label='Loss Gradient', alpha=0.7)
     plt.xlabel('Epoch')
     plt.suptitle('Chemical Reaction Newton-Krylov Neural Network')
     plt.title(r'Adam, Inner Iterations = ' + str(n_inner) + r',  $T$ = ' + str(parameters['T']))
@@ -121,7 +121,7 @@ def testNewtonKrylovNet(T, n_inner, weights):
     plt.legend()
 
     # Plot the computed steady-state solution
-    index = np.argwhere(errors == np.min(errors))[0]
+    index = np.argwhere(errors == np.min(errors))[0][0]
     x_ss = samples[:,10,index]
     U = x_ss[0:M]; V = x_ss[M:]
 
@@ -138,6 +138,6 @@ def testNewtonKrylovNet(T, n_inner, weights):
 
 if __name__ == '__main__':
     T = 5.e-4
-    n_inner = 4
+    n_inner = 25
     weights = trainNKNetAdam(T, n_inner)
     testNewtonKrylovNet(T, n_inner, weights)
