@@ -1,5 +1,4 @@
 import torch as pt
-import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 
@@ -69,9 +68,8 @@ def train(epoch):
     for batch_idx, (data, _) in enumerate(train_loader):
         optimizer.zero_grad()
 
-        # Compute Loss
-        output = network(data)
-        loss = loss_fn(output)
+        # Compute Loss, NKLoss takes care of network forwards
+        loss = loss_fn(data)
 
         # Compute loss gradient and do one optimization step
         loss.backward()
