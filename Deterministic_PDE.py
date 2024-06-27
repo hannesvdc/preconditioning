@@ -5,6 +5,20 @@ import numpy as onp
 
 from api.algorithms.NewtonKrylov import *
 
+# x contains samples along the columns (axis = 1)
+def f_vectorized(x, d1, d2, M):
+	dx = 1.0/M
+	U = x[0:M, :]
+	V = x[M:, :]
+
+	# Compute indices module M for periodic boundary conditions
+	ddU = (np.roll(U, -1, axis=0) - 2.0*U + np.roll(U, 1, axis=0)) / dx**2
+	ddV = (np.roll(V, -1, axis=0) - 2.0*V + np.roll(V, 1, axis=0)) / dx**2
+	f1 = d1*ddU + 1.0 - 2.0*U + U**2*V # f1 is a (M, N_data) array
+	f2 = d2*ddV + 3.0         - U**2*V # f2 is a (M, N_data) array
+
+	return np.vstack((f1, f2))
+
 def f_fast(x, d1, d2, M):
 	dx = 1.0/M
 	U = x[0:M]
@@ -18,7 +32,30 @@ def f_fast(x, d1, d2, M):
 
 	return np.concatenate((f1, f2))
 
-	
+def PDE_Timestepper_vectorized(x, parameters, verbose=False):
+	M = parameters['M']
+	T = parameters['T']
+	d2 = parameters['d2']
+	d1 = 5.e-4
+	dt = 1.e-4
+	N = int(T / dt)
+
+	if verbose:
+		print('U', x[0:M, :])
+		print('V', x[M:, :])
+
+	for n in range(N):
+		# Apply right-hand side as update (with finite differences)
+		f_rhs = f_vectorized(x, d1, d2, M) # f_rhs is an (2M, N_data) array
+		x = x + dt*f_rhs
+
+		# Update timestepping
+		if verbose and n % 1000 == 0:
+			print('T =', n*dt)
+			print('U', x[0:M, :])
+
+	return x
+
 def PDE_Timestepper(x, parameters, verbose=False):
 	M = parameters['M']
 	T = parameters['T']

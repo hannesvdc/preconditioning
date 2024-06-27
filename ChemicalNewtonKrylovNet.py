@@ -13,12 +13,15 @@ import Deterministic_PDE as pde
 
 def setupNeuralNetwork(T, outer_iterations=3, inner_iterations=4, baseweight=4.0):
     # Define the Objective Function Psi
-    M = 200
+    M = 20
     d2 = 0.06
     parameters = {'d2': d2, 'M': M, 'T': T}
+    def psi_vectorized(x):
+        xp = pde.PDE_Timestepper_vectorized(x, parameters) # Use PDE first
+        return 100.0 * (x - xp) # approx T * \partial_T phi_pde(x), scale a bit to keep loss large enough
     def psi(x):
         xp = pde.PDE_Timestepper(x, parameters) # Use PDE first
-        return x - xp # approx T * \partial_T phi_pde(x)
+        return x - xp # approx T * \partial_T phi_pde(x), scale a bit to keep loss large enough
     
     # Sample Random Initial Conditions
     seed = 100
@@ -26,11 +29,12 @@ def setupNeuralNetwork(T, outer_iterations=3, inner_iterations=4, baseweight=4.0
     rng = rd.RandomState(seed=seed)
     directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK_LBM/'
     filename = 'Steady_State_LBM_dt=1e-4.npy'
-    x0 = np.load(directory + filename).flatten()
+    x0 = np.load(directory + filename).flatten()[0::10]
+    #x0 = computeInitialCondition(M)
     x0_data = np.array([x0,]*N_data).transpose() + rng.normal(0.0, 1.0, size=(2*M, N_data))
 
     # Setup classes for training
-    net = nknet.NewtonKrylovNetwork(psi, outer_iterations, inner_iterations, baseweight=baseweight)
+    net = nknet.NewtonKrylovNetwork(psi_vectorized, outer_iterations, inner_iterations, baseweight=baseweight)
     f = lambda w: net.loss(x0_data, w)
     df = jacobian(f)
 
@@ -48,18 +52,18 @@ def sampleWeights(loss_fn, n_inner):
             return weights
         
 def trainNKNetAdam(T, n_inner):
-    _, loss_fn, d_loss_fn, _, parameters, _ = setupNeuralNetwork(T=T, outer_iterations=2, inner_iterations=n_inner)
+    _, loss_fn, d_loss_fn, _, parameters, _ = setupNeuralNetwork(T=T, outer_iterations=3, inner_iterations=n_inner)
     weights = sampleWeights(loss_fn, n_inner)
     print('Initial Loss', loss_fn(weights))
     print('Initial Loss Derivative', lg.norm(d_loss_fn(weights)))
 
     # Setup the optimizer
-    scheduler = sch.PiecewiseConstantScheduler({0: 1.e-2, 500: 1.e-3})
+    scheduler = sch.PiecewiseConstantScheduler({0: 1.e-3})
     optimizer = adam.AdamOptimizer(loss_fn, d_loss_fn, scheduler=scheduler)
     print('Initial weights', weights)
 
     # Do the training
-    epochs = 15000
+    epochs = 25000
     try:
         weights = optimizer.optimize(weights, n_epochs=epochs)
     except KeyboardInterrupt: # If Training has converged well enough with Adam, the user can stop manually
@@ -89,7 +93,7 @@ def trainNKNetAdam(T, n_inner):
 
 def testNewtonKrylovNet(T, n_inner, weights):
     # Setup the network, weights obtained by BFGS training (subroutine above)
-    net, _,  _, x0_data, parameters, psi = setupNeuralNetwork(T, outer_iterations=2, inner_iterations=n_inner)
+    net, _,  _, x0_data, parameters, psi = setupNeuralNetwork(T, outer_iterations=3, inner_iterations=n_inner)
     M = parameters['M']
     
     # Run all data through the neural network
@@ -138,6 +142,6 @@ def testNewtonKrylovNet(T, n_inner, weights):
 
 if __name__ == '__main__':
     T = 5.e-4
-    n_inner = 25
+    n_inner = 10
     weights = trainNKNetAdam(T, n_inner)
     testNewtonKrylovNet(T, n_inner, weights)
