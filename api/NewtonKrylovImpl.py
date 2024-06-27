@@ -59,7 +59,7 @@ class NewtonKrylovLoss(nn.Module):
         self.outer_iterations = outer_iterations
         self.base_weight = base_weight
 
-    def forward(self, x, targets=None):
+    def forward(self, x):
         loss = 0.0
         N_data = x.shape[0]
 
