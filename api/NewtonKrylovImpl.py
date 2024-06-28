@@ -5,8 +5,9 @@ from collections import OrderedDict
 class NewtonKrylovLayer(nn.Module):
     """ Custom Linear layer but mimics a standard linear layer """
     def __init__(self, F, inner_iterations):
-        super().__init__()
+        super(NewtonKrylovLayer, self).__init__()
 
+        self.eps = 1.e-8
         self.F = F # the function we want to solve, needs to n
         self.dF_v = lambda x, v, Fx: (self.F(x + self.eps*v) - Fx) / self.eps
         self.f = lambda x, v, Fx: self.dF_v(x, v, Fx) + Fx # The linear system during every outer iteration
@@ -24,7 +25,7 @@ class NewtonKrylovLayer(nn.Module):
         for n in range(1, self.inner_iterations): # do inner_iterations-1 function evaluations
             yp = self._N(y, V, n)                 # yp is an (N_data, N) matrix
             v = self.f(x, yp, F_value)            # v_n is a (N_data, N) matrix 
-            V = pt.cat(V, v[:,None,:], dim=1) # v_n size (N_data, n, N)
+            V = pt.cat((V, v[:,None,:]), dim=1)   # v_n size (N_data, n, N)
 
         yp = self._N(y, V, self.inner_iterations)
         return x + yp # y = x_{k+1} - x_k
@@ -36,6 +37,8 @@ class NewtonKrylovLayer(nn.Module):
     
 class NewtonKrylovNetwork(nn.Module):
     def __init__(self, F, inner_iterations):
+        super(NewtonKrylovNetwork, self).__init__()
+
         self.F = F
         self.inner_layer = NewtonKrylovLayer(F, inner_iterations)
         
@@ -66,7 +69,7 @@ class NewtonKrylovLoss(nn.Module):
         for k in range(self.outer_iterations):
             x = self.network.forward(x)
 
-            loss_weight = self.baseweight**(k+1)
+            loss_weight = self.base_weight**(k+1)
             loss += loss_weight * pt.sum(pt.square(self.F(x))) # Sum over all data points (dim=0) and over all components (dim=1)
 
         avg_loss = loss / N_data
