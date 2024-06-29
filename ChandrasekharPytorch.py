@@ -3,7 +3,9 @@ import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 
 import numpy as np
+import numpy.linalg as lg
 import scipy.optimize as opt
+import scipy.optimize.nonlin as nl
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
@@ -49,9 +51,10 @@ def computeAc():
         for j in range(10):
             Ac[i,j] = mu[i] / (mu[i] + mu[j])
     return 0.5 * c/m * Ac
+Ac_numpy = computeAc().numpy()
 Ac = computeAc().transpose(0, 1) # Transpose because pytorch stores data in rows
 H = lambda x: x + 1.0 / (1.0 + pt.mm(x, Ac))
-H_vector = lambda x: x + 1.0 / (1.0 + np.dot(Ac.transpose(0, 1), x))
+H_vector = lambda x: x + 1.0 / (1.0 + np.dot(Ac_numpy, x))
 
 # Initialize the Network and the Optimizer (Adam)
 print('\nSetting Up the Newton-Krylov Neural Network.')
@@ -66,6 +69,7 @@ network.forward(dataset.data)
 train_losses = []
 train_counter = []
 log_rate = 4
+store_directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/R2N2/NKNet/'
 def train(epoch):
     network.train()
     for _, (data, _) in enumerate(train_loader):
@@ -78,14 +82,16 @@ def train(epoch):
         loss.backward()
         optimizer.step()
 
-        # Some housekeeping
-    print('Train Epoch: {} \tLoss: {:.6f}'.format(epoch, loss.item()))
+    # Some housekeeping
+    print('Train Epoch: {} \tLoss: {:.6f} \tLoss Gradient: {:.6f}'.format(epoch, loss.item(), pt.norm(network.inner_layer.weights.grad)))
     train_losses.append(loss.item())
     train_counter.append(epoch)
+    pt.save(network.state_dict(), store_directory + 'model_chandrasekhar.pth')
+    pt.save(optimizer.state_dict(), store_directory + 'optimizer_chandrasekhar.pth')
 
 # Do the actual training
 print('\nStarting Training Procedure...')
-n_epochs = 100000
+n_epochs = 200000
 try:
     for epoch in range(1, n_epochs + 1):
         train(epoch)
@@ -96,48 +102,49 @@ except KeyboardInterrupt:
 fig = plt.figure()
 plt.semilogy(train_counter, train_losses, color='blue', label='Training Loss')
 plt.legend()
-plt.xlabel('Number of training examples seen')
+plt.xlabel('Epochs')
 plt.ylabel('Loss')
 plt.show()
 
 # Testing Routine
 test_dataset = ChandrasekharDataset()
 N_test_data = len(test_dataset)
-x = pt.copy(test_dataset.data)
+x = pt.clone(test_dataset.data)
 
 # Run each rhs through the neural network
-n_outer_iterations = 10 # Does not need be the same as the number the network was trained on.
-nn_errors = np.zeros((N_test_data, n_outer_iterations+1))
-nk_errors = np.zeros((N_test_data, n_outer_iterations+1))
+n_outer_iterations = 10
+nn_errors = pt.zeros((N_test_data, n_outer_iterations+1))
+nk_errors = pt.zeros((N_test_data, n_outer_iterations+1))
 nn_errors[:,0] = pt.norm(H(x), dim=1)
 for k in range(1, n_outer_iterations+1):
     x = network.forward(x)
     nn_errors[:,k] = pt.norm(H(x), dim=1)
 for n in range(N_test_data):
-    x0 = test_dataset.data[n,:]
+    x0 = test_dataset.data[n,:].numpy()
     for k in range(n_outer_iterations+1):
         try:
             x_out = opt.newton_krylov(H_vector, x0, rdiff=1.e-8, iter=k, maxiter=k, method='gmres', inner_maxiter=1, outer_k=0, line_search=None)
-        except opt.NoConvergence as e:
+        except nl.NoConvergence as e:
             x_out = e.args[0]
-        nk_errors[n,k] = pt.norm(H(x_out))
+        nk_errors[n,k] = lg.norm(H_vector(x_out))
 
 # Average the errors
-avg_nn_errors = np.average(nn_errors, axis=0)
-avg_nk_errors = np.average(nk_errors, axis=0)
+avg_nn_errors = pt.mean(nn_errors, dim=0)
+avg_nk_errors = pt.mean(nk_errors, dim=0)
 
 # Plot the errors
-fig, ax = plt.subplots()  
-k_axis = np.linspace(0, n_outer_iterations, n_outer_iterations+1)
-rect = mpl.patches.Rectangle((loss_fn.outer_iterations+0.5, 1.e-8), 7.5, 70, color='gray', alpha=0.2)
-ax.add_patch(rect)
-plt.semilogy(k_axis, avg_nn_errors, label=r'Newton-Krylov Network with $4$ Inner Iterations', linestyle='--', marker='d')
-plt.semilogy(k_axis, avg_nk_errors, label=r'Scipy with $4$ Krylov Vectors', linestyle='--', marker='d')
-plt.xticks(np.linspace(0, n_outer_iterations, n_outer_iterations+1))
-plt.xlabel(r'# Outer Iterations $k$')
-plt.ylabel(r'$|H(x_k)|$')
-plt.xlim((-0.5,n_outer_iterations + 0.5))
-plt.ylim((0.1*min(np.min(avg_nk_errors), np.min(avg_nn_errors)),70))
-plt.title(r'Function Value $|H(x_k)|$')
-plt.legend()
-plt.show()
+with pt.no_grad():
+    fig, ax = plt.subplots()  
+    k_axis = pt.linspace(0, n_outer_iterations, n_outer_iterations+1)
+    rect = mpl.patches.Rectangle((loss_fn.outer_iterations+0.5, 1.e-8), 7.5, 70, color='gray', alpha=0.2)
+    ax.add_patch(rect)
+    plt.semilogy(k_axis, avg_nn_errors, label=r'Newton-Krylov Network with $4$ Inner Iterations', linestyle='--', marker='d')
+    plt.semilogy(k_axis, avg_nk_errors, label=r'Scipy with $4$ Krylov Vectors', linestyle='--', marker='d')
+    plt.xticks(pt.linspace(0, n_outer_iterations, n_outer_iterations+1))
+    plt.xlabel(r'# Outer Iterations $k$')
+    plt.ylabel(r'$|H(x_k)|$')
+    plt.xlim((-0.5,n_outer_iterations + 0.5))
+    plt.ylim((0.1*min(pt.min(avg_nk_errors), pt.min(avg_nn_errors)),70))
+    plt.title(r'Function Value $|H(x_k)|$')
+    plt.legend()
+    plt.show()
