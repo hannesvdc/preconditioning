@@ -1,5 +1,6 @@
 import torch as pt
 import torch.optim as optim
+import torch.optim.lr_scheduler as sch
 from torch.utils.data import Dataset, DataLoader
 
 import numpy as np
@@ -62,7 +63,8 @@ inner_iterations = 4
 outer_iterations = 3
 network = NewtonKrylovNetwork(H, inner_iterations)
 loss_fn = NewtonKrylovLoss(network, H, outer_iterations)
-optimizer = optim.Adam(network.parameters())
+optimizer = optim.Adam(network.parameters(), lr=0.01)
+scheduler = sch.StepLR(optimizer, step_size=100000, gamma=0.1)
 network.forward(dataset.data)
 
 # Training Routine
@@ -75,7 +77,7 @@ def train(epoch):
     for _, (data, _) in enumerate(train_loader):
         optimizer.zero_grad()
 
-        # Compute Loss, NKLoss takes care of network forwards
+        # Compute Loss. NewtonKrylovLoss takes care of network forwards
         loss = loss_fn(data)
 
         # Compute loss gradient and do one optimization step
@@ -91,10 +93,11 @@ def train(epoch):
 
 # Do the actual training
 print('\nStarting Training Procedure...')
-n_epochs = 200000
+n_epochs = 1000000
 try:
     for epoch in range(1, n_epochs + 1):
         train(epoch)
+        scheduler.step()
 except KeyboardInterrupt:
     print('Aborting Training. Plotting Training Convergence.')
 
