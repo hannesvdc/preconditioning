@@ -40,7 +40,7 @@ train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 # Setup the PDE timestepper and psi flowmap function
 # Parameters
 d1 = 5.e-4; d2 = 0.06
-dt = 1.e-4; T = 5.0 * dt; N = int(T / dt)
+dt = 1.e-4; T = 0.05; N = int(T / dt)
 M = 20; dx = 1.0 / M
 
 # Compute indices module M for periodic boundary conditions
@@ -57,15 +57,15 @@ def PDE_Timestepper_vectorized(x):
 	for _ in range(N):
 		x = x + dt * f_vectorized(x) # the rhs is an (N_data, 2M) array
 	return x
-psi = lambda x: 100.0 * (PDE_Timestepper_vectorized(x) - x) # One-liner
+psi = lambda x: PDE_Timestepper_vectorized(x) - x # One-liner
 
 # Initialize the Network and the Optimizer (Adam)
 print('\nSetting Up the Newton-Krylov Neural Network.')
-inner_iterations = 10
+inner_iterations = 4
 outer_iterations = 3
 network = NewtonKrylovNetwork(psi, inner_iterations)
 loss_fn = NewtonKrylovLoss(network, psi, outer_iterations)
-adam_optimizer = optim.Adam(network.parameters(), lr=0.01)
+adam_optimizer = optim.Adam(network.parameters(), lr=0.001)
 scheduler = sch.StepLR(adam_optimizer, step_size=1000, gamma=0.1)
 bfgs_optimizer = optim.LBFGS(network.parameters(), lr=0.01, max_iter=1000, line_search_fn=None)
 

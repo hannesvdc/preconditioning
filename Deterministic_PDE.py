@@ -145,7 +145,6 @@ def findFixedPointNK():
 	plt.show()
 
 
-
 def Plot_PDE_Solution():
 	seed = 100
 	rng = rd.RandomState(seed=seed)
@@ -179,14 +178,14 @@ def Plot_PDE_Solution():
 	np.save(directory +  filename, np.vstack((U,V)))
 
 	# Plot concentrations of U and V
-	x_array = np.linspace(0.0, 1.0, M)
-	plt.plot(x_array, U, label=r'$U(x)$', color='red')
+	x_array = np.linspace(0.0, 1.0, M)[::4]
+	plt.plot(x_array, U[::4], label=r'$U(x)$', color='red')
 	plt.xlabel(r'$x$')
 	plt.title(r'Steady-State PDE')
 	plt.legend()
 
 	plt.figure()
-	plt.plot(x_array, V, label=r'$V(x)$')
+	plt.plot(x_array, V[::4], label=r'$V(x)$')
 	plt.title(r'Steady-State PDE')
 	plt.xlabel(r'$x$')
 

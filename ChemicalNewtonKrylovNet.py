@@ -18,7 +18,7 @@ def setupNeuralNetwork(T, outer_iterations=3, inner_iterations=4, baseweight=4.0
     parameters = {'d2': d2, 'M': M, 'T': T}
     def psi_vectorized(x):
         xp = pde.PDE_Timestepper_vectorized(x, parameters) # Use PDE first
-        return 100.0 * (x - xp) # approx T * \partial_T phi_pde(x), scale a bit to keep loss large enough
+        return x - xp # approx T * \partial_T phi_pde(x), scale a bit to keep loss large enough
     def psi(x):
         xp = pde.PDE_Timestepper(x, parameters) # Use PDE first
         return x - xp # approx T * \partial_T phi_pde(x), scale a bit to keep loss large enough
@@ -58,7 +58,7 @@ def trainNKNetAdam(T, n_inner):
     print('Initial Loss Derivative', lg.norm(d_loss_fn(weights)))
 
     # Setup the optimizer
-    scheduler = sch.PiecewiseConstantScheduler({0: 1.e-3})
+    scheduler = sch.PiecewiseConstantScheduler({0: 1.e-2, 1000: 1.e-3})
     optimizer = adam.AdamOptimizer(loss_fn, d_loss_fn, scheduler=scheduler)
     print('Initial weights', weights)
 
@@ -75,7 +75,7 @@ def trainNKNetAdam(T, n_inner):
 
     # Storing weights
     directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/R2N2/NKNet/'
-    filename = 'Weights_Adam_T=' + str(T) + '_inner_iterations=' + str(n_inner) + '_.npy'
+    filename = 'Weights_Adam_Chemical_T=' + str(T) + '_inner_iterations=' + str(n_inner) + '_.npy'
     np.save(directory + filename, weights)
 
     # Post-processing
@@ -93,13 +93,13 @@ def trainNKNetAdam(T, n_inner):
 
 def testNewtonKrylovNet(T, n_inner, weights):
     # Setup the network, weights obtained by BFGS training (subroutine above)
-    net, _,  _, x0_data, parameters, psi = setupNeuralNetwork(T, outer_iterations=3, inner_iterations=n_inner)
+    net, _,  _, data, parameters, psi = setupNeuralNetwork(T, outer_iterations=3, inner_iterations=n_inner)
     M = parameters['M']
     
     # Run all data through the neural network
-    N_data = x0_data.shape[1]
+    N_data = data.shape[1]
     n_outer_iterations = 10
-    samples = net.forward(x0_data, weights, n_outer_iterations)
+    samples = net.forward(data, weights, n_outer_iterations)
     errors = np.zeros((N_data, n_outer_iterations+1))
     for n in range(N_data):
         for k in range(samples.shape[1]):
@@ -141,7 +141,7 @@ def testNewtonKrylovNet(T, n_inner, weights):
 
 
 if __name__ == '__main__':
-    T = 5.e-4
-    n_inner = 10
+    T = 0.05
+    n_inner = 4
     weights = trainNKNetAdam(T, n_inner)
     testNewtonKrylovNet(T, n_inner, weights)
