@@ -11,7 +11,7 @@ pt.set_grad_enabled(False)
 pt.set_default_dtype(pt.float64)
 
 # Load the stored steady state and perturb it
-M = 20
+M = 25
 dataset = ChemicalDataset(M=M)
 x = pt.clone(dataset.data)
 
@@ -20,7 +20,7 @@ store_directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcatio
 inner_iterations = 4
 outer_iterations = 10
 network = NewtonKrylovNetwork(psi, inner_iterations)
-network.load_state_dict(pt.load(store_directory + 'model_adam_chemical_M=' + str(M) + '.pth'))
+network.load_state_dict(pt.load(store_directory + 'model_chemical.pth'))
 
 # Propagate the data 10 times
 errors = pt.zeros(x.shape[0], outer_iterations+1)
@@ -44,6 +44,6 @@ plt.legend()
 mse = pt.mean(errors, dim=0)
 outers = pt.arange(0, outer_iterations+1)
 plt.figure()
-plt.plot(outers, mse, label=r'MSE')
+plt.semilogy(outers, mse, label=r'MSE')
 plt.legend()
 plt.show()

@@ -1,7 +1,7 @@
 import autograd.numpy as np
 import autograd.numpy.linalg as lg
 
-import api.internal.SuperStructure as ss
+import api.SuperStructure as ss
 
 # This Newton-Krylov Neural Network only works when F is applied for each column of
 # The input matrix.

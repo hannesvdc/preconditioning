@@ -14,7 +14,7 @@ pt.set_default_dtype(pt.float64)
 
 # Load the data in memory
 print('Generating Training Data.')
-M = 25
+M = 50
 batch_size = 64
 dataset = ChemicalDataset(M=M)
 train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
@@ -51,8 +51,8 @@ def train(epoch):
     print('Train Epoch: {} \tLoss: {:.6f} \tLoss Gradient: {:.6f}'.format(epoch, loss.item(), pt.norm(network.inner_layer.weights.grad)))
     train_losses.append(loss.item())
     train_counter.append(epoch)
-    pt.save(network.state_dict(), store_directory + 'model_chemical.pth')
-    pt.save(optimizer.state_dict(), store_directory + 'optimizer_chemical.pth')
+    pt.save(network.state_dict(), store_directory + 'model_chemical_M='+str(M)+'_inner='+str(inner_iterations)+'.pth')
+    pt.save(optimizer.state_dict(), store_directory + 'optimizer_chemical_M='+str(M)+'_inner='+str(inner_iterations)+'.pth')
 
 # Do the actual training
 print('\nStarting Adam Training Procedure...')

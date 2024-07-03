@@ -1,6 +1,6 @@
 import autograd.numpy as np
 
-from api.internal.SuperStructure import SuperStructure
+from api.SuperStructure import SuperStructure
 
 class KrylovSuperStructure(SuperStructure):
     def __init__(self, A_data, b_data, outer_iterations, inner_iterations, P=None, baseweight=4.0):
