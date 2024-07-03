@@ -87,8 +87,8 @@ try:
 except KeyboardInterrupt:
     print('Aborting Adam Training. Starting fine-tuning with L-BFGS.')
 passed_epochs = train_counter[-1]
-pt.save(network.state_dict(), store_directory + 'model_adam_chemical.pth')
-pt.save(optimizer.state_dict(), store_directory + 'optimizer_adam_chemical.pth')
+pt.save(network.state_dict(), store_directory + 'model_adam_chemical_M=' + str(dataset.M) + '.pth')
+pt.save(optimizer.state_dict(), store_directory + 'optimizer_adam_chemical_M=' + str(dataset.M) + '.pth')
 
 # Show the training results
 fig = plt.figure()
