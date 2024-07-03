@@ -1,5 +1,32 @@
 import torch as pt
+from torch.utils.data import Dataset
 
+import numpy as np
+
+# The data impleementation and loader class
+class ChemicalDataset(Dataset):
+    def __init__(self, M):
+        super().__init__()
+        self.seed = 100
+        self.scale = 0.1
+        self.rng = np.random.RandomState(seed=self.seed)
+        
+        self.N_data = 1024
+        self.M = M
+        self.subsample = 200 // self.M
+        self.data_size = 2 * self.M
+        directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK_LBM/'
+        filename = 'Steady_State_LBM_dt=1e-4.npy'
+        x0 = np.load(directory + filename).flatten()[0::self.subsample]
+        self.data = pt.from_numpy(x0[None,:] + self.rng.normal(0.0, self.scale, size=(self.N_data, self.data_size)))
+
+    def __len__(self):
+        return self.N_data
+	
+    def __getitem__(self, idx):
+        return self.data[idx,:], pt.zeros(self.data_size)
+    
+    
 # Setup the PDE timestepper and psi flowmap function
 # Parameters
 d1 = 5.e-4
