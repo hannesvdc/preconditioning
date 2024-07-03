@@ -56,9 +56,9 @@ def train(epoch):
 
 # Do the actual training
 print('\nStarting Adam Training Procedure...')
-n_adam_epochs = 10000
+n_epochs = 10000
 try:
-    for epoch in range(1, n_adam_epochs + 1):
+    for epoch in range(1, n_epochs + 1):
         train(epoch)
         scheduler.step()
 except KeyboardInterrupt:
