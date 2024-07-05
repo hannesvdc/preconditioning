@@ -3,7 +3,7 @@ import torch.nn as nn
 from collections import OrderedDict
 
 class NewtonKrylovLayer(nn.Module):
-    """ Custom Linear layer but mimics a standard linear layer """
+    """ Custom Newton-Krylov layer to solve Jf(xk) y = -f(xk) """
     def __init__(self, F, inner_iterations):
         super(NewtonKrylovLayer, self).__init__()
 

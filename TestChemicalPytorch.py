@@ -1,6 +1,7 @@
 import torch as pt
 
 import numpy as np
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 from api.NewtonKrylovImpl import *
@@ -20,7 +21,7 @@ store_directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcatio
 inner_iterations = 4
 outer_iterations = 10
 network = NewtonKrylovNetwork(psi, inner_iterations)
-network.load_state_dict(pt.load(store_directory + 'model_chemical.pth'))
+network.load_state_dict(pt.load(store_directory + 'model_chemical_M='+str(M)+'_inner='+str(inner_iterations)+'.pth'))
 
 # Propagate the data 10 times
 errors = pt.zeros(x.shape[0], outer_iterations+1)
@@ -43,7 +44,10 @@ plt.legend()
 # Average the erros and show convergence
 mse = pt.mean(errors, dim=0)
 outers = pt.arange(0, outer_iterations+1)
-plt.figure()
-plt.semilogy(outers, mse, label=r'MSE')
+fig, ax = plt.subplots()
+rect = mpl.patches.Rectangle((3.5, 8.e-3), 7.5, 1, color='gray', alpha=0.2)
+ax.add_patch(rect)
+plt.semilogy(outers, mse, label=r'PDE Error')
+plt.xlabel('# Outer Iterations')
 plt.legend()
 plt.show()
