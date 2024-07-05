@@ -21,7 +21,7 @@ train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
 # Initialize the Network and the Optimizer (Adam)
 print('\nSetting Up the Newton-Krylov Neural Network.')
-inner_iterations = 4
+inner_iterations = 8
 outer_iterations = 3
 network = NewtonKrylovNetwork(psi, inner_iterations)
 loss_fn = NewtonKrylovLoss(network, psi, outer_iterations)
@@ -62,10 +62,7 @@ try:
         train(epoch)
         scheduler.step()
 except KeyboardInterrupt:
-    print('Aborting Adam Training. Starting fine-tuning with L-BFGS.')
-passed_epochs = train_counter[-1]
-pt.save(network.state_dict(), store_directory + 'model_adam_chemical_M=' + str(dataset.M) + '.pth')
-pt.save(optimizer.state_dict(), store_directory + 'optimizer_adam_chemical_M=' + str(dataset.M) + '.pth')
+    print('Aborting Adam Training. Plotting Training Convergence')
 
 # Show the training results
 fig = plt.figure()
