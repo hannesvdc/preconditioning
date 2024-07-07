@@ -12,7 +12,7 @@ pt.set_grad_enabled(False)
 pt.set_default_dtype(pt.float64)
 
 # Load the stored steady state and perturb it
-M = 25
+M = 50
 dataset = ChemicalDataset(M=M)
 x = pt.clone(dataset.data)
 
@@ -45,9 +45,9 @@ plt.legend()
 mse = pt.mean(errors, dim=0)
 outers = pt.arange(0, outer_iterations+1)
 fig, ax = plt.subplots()
-rect = mpl.patches.Rectangle((3.5, 8.e-3), 7.5, 1, color='gray', alpha=0.2)
-ax.add_patch(rect)
 plt.semilogy(outers, mse, label=r'PDE Error')
+rect = mpl.patches.Rectangle((3.5, plt.ylim()[0]), 7.5, 1, color='gray', alpha=0.2)
+ax.add_patch(rect)
 plt.xlabel('# Outer Iterations')
 plt.legend()
 plt.show()
