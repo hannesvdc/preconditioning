@@ -25,8 +25,7 @@ class ChemicalDataset(Dataset):
 	
     def __getitem__(self, idx):
         return self.data[idx,:], pt.zeros(self.data_size)
-    
-    
+
 # Setup the PDE timestepper and psi flowmap function
 # Parameters
 d1 = 5.e-4
@@ -53,4 +52,4 @@ def PDE_Timestepper_vectorized(x):
 	for _ in range(N):
 		x = x + dt * f_vectorized(x) # the rhs is an (N_data, 2M) array
 	return x
-psi = lambda x: PDE_Timestepper_vectorized(x) - x # One-liner
+psi_pde = lambda x: PDE_Timestepper_vectorized(x) - x # One-liner

@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 
 from api.NewtonKrylovImpl import *
-from ChemicalRoutines import psi, ChemicalDataset
+from ChemicalRoutines import psi_pde, ChemicalDataset
 
 # Just some sanity pytorch settings
 pt.set_grad_enabled(True)
@@ -23,8 +23,8 @@ train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 print('\nSetting Up the Newton-Krylov Neural Network.')
 inner_iterations = 8
 outer_iterations = 3
-network = NewtonKrylovNetwork(psi, inner_iterations)
-loss_fn = NewtonKrylovLoss(network, psi, outer_iterations)
+network = NewtonKrylovNetwork(psi_pde, inner_iterations)
+loss_fn = NewtonKrylovLoss(network, psi_pde, outer_iterations)
 optimizer = optim.Adam(network.parameters(), lr=0.001)
 scheduler = sch.StepLR(optimizer, step_size=1000, gamma=0.1)
 
