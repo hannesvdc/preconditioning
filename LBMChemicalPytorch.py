@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 
 from api.NewtonKrylovImpl import *
-from ChemicalRoutines import psi_pde, ChemicalDataset
+from ChemicalRoutines import psi_lbm, ChemicalDataset
 
 # Just some sanity pytorch settings
 pt.set_grad_enabled(True)
@@ -14,17 +14,17 @@ pt.set_default_dtype(pt.float64)
 
 # Load the data in memory
 print('Generating Training Data.')
-M = 50
+M = 25
 batch_size = 64
 dataset = ChemicalDataset(M=M)
 train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
 # Initialize the Network and the Optimizer (Adam)
 print('\nSetting Up the Newton-Krylov Neural Network.')
-inner_iterations = 8
+inner_iterations = 4
 outer_iterations = 3
-network = NewtonKrylovNetwork(psi_pde, inner_iterations)
-loss_fn = NewtonKrylovLoss(network, psi_pde, outer_iterations)
+network = NewtonKrylovNetwork(psi_lbm, inner_iterations)
+loss_fn = NewtonKrylovLoss(network, psi_lbm, outer_iterations)
 optimizer = optim.Adam(network.parameters(), lr=0.001)
 scheduler = sch.StepLR(optimizer, step_size=1000, gamma=0.1)
 
@@ -48,8 +48,8 @@ def train(epoch):
     print('Train Epoch: {} \tLoss: {:.6f} \tLoss Gradient: {:.6f}'.format(epoch, loss.item(), pt.norm(network.inner_layer.weights.grad)))
     train_losses.append(loss.item())
     train_counter.append(epoch)
-    pt.save(network.state_dict(), store_directory + 'model_chemical_M='+str(M)+'_inner='+str(inner_iterations)+'.pth')
-    pt.save(optimizer.state_dict(), store_directory + 'optimizer_chemical_M='+str(M)+'_inner='+str(inner_iterations)+'.pth')
+    pt.save(network.state_dict(), store_directory + 'model_lbm_chemical_M='+str(M)+'_inner='+str(inner_iterations)+'.pth')
+    pt.save(optimizer.state_dict(), store_directory + 'optimizer_lbm_chemical_M='+str(M)+'_inner='+str(inner_iterations)+'.pth')
 
 # Do the actual training
 print('\nStarting Adam Training Procedure...')

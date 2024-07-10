@@ -72,12 +72,13 @@ def Collisions_Reactions(f_1_U, f0_U, f1_U, f_1_V, f0_V, f1_V, relaxation_times)
     c_1_V = -relaxation_times[1] * (f_1_V - weights[0] * phi_V)
 
 	# reaction term for activator (U)
-    propensity_1 = k1*A - k2*phi_U + k4*pt.multiply(pt.pow(phi_U, 2.0), phi_V)
+    cross_UV = pt.multiply(pt.pow(phi_U, 2.0), phi_V)
+    propensity_1 = k1*A - k2*phi_U + k4*cross_UV
     r1_U  = weights[2] * dt * propensity_1
     r0_U  = weights[1] * dt * propensity_1
     r_1_U = weights[0] * dt * propensity_1
 	# reaction term for inibitor (V)
-    propensity_2 = k3*B - k4*pt.multiply(pt.pow(phi_U, 2.0), phi_V)
+    propensity_2 = k3*B - k4*cross_UV
     r1_V  = weights[2] * dt * propensity_2
     r0_V  = weights[1] * dt * propensity_2
     r_1_V = weights[0] * dt * propensity_2
@@ -96,7 +97,6 @@ def _LatticeBM_Schnakenberg(f_1_U, f0_U, f1_U, f_1_V, f0_V, f1_V, relaxation_tim
     f_1star_V = f_1_V + c_1_V + r_1_V
 	
 	# Updating, use periodc boundary conditions
-    # TO DO: pt.roll
     f0_U = pt.clone(f0star_U)
     f0_V = pt.clone(f0star_V)
     f1_U = pt.roll(f1star_U, 1, dims=1)
@@ -108,15 +108,13 @@ def _LatticeBM_Schnakenberg(f_1_U, f0_U, f1_U, f_1_V, f0_V, f1_V, relaxation_tim
 
 # Implements D1Q3 Lattice-Boltzmann
 def LBM(x, T=T_psi):
-    assert x.shape[1] % 2 == 0
-
 	# Lattice Parameters
     M = x.shape[1] // 2
     dx = 1.0 / M
     _N = int(T / dt)
     relaxation_times = pt.tensor([2.0/(1.0 + 2.0/cs_quad*d1*dt/dx**2), 2.0/(1.0 + 2.0/cs_quad*d2*dt/dx**2)])
 
-	# Initial Condition for Lattice-Boltzmann. Each f is 2 by M
+	# Initial Condition for Lattice-Boltzmann.
     U = x[:,0:M]
     V = x[:, M:]
     f_1_U, f0_U, f1_U = weights[0] * U, weights[1] * U, weights[2] * U # Moving probs for U
@@ -124,7 +122,6 @@ def LBM(x, T=T_psi):
 
     # Do the actual time-stepping
     for n in range(_N):
-        print('T =', n*dt)
         f_1_U, f0_U, f1_U, f_1_V, f0_V, f1_V = _LatticeBM_Schnakenberg(f_1_U, f0_U, f1_U,
                                                                        f_1_V, f0_V, f1_V,
                                                                        relaxation_times,
