@@ -73,12 +73,12 @@ def Collisions_Reactions(f_1_U, f0_U, f1_U, f_1_V, f0_V, f1_V, relaxation_times)
 
 	# Chemical Reactions
 	# reaction term for activator (U)
-    propensity_1 = k1*A - k2*phi_U + k4*np.multiply(np.power(phi_U, 2.0), phi_V)
+    propensity_1 = k1*A - k2*phi_U + k4*pt.multiply(pt.power(phi_U, 2.0), phi_V)
     r1_U  = weights[2] * dt * propensity_1
     r0_U  = weights[1] * dt * propensity_1
     r_1_U = weights[0] * dt * propensity_1
 	# reaction term for inibitor (V)
-    propensity_2 = k3*B - k4*np.multiply(np.power(phi_U, 2.0), phi_V)
+    propensity_2 = k3*B - k4*pt.multiply(pt.power(phi_U, 2.0), phi_V)
     r1_V  = weights[2] * dt * propensity_2
     r0_V  = weights[1] * dt * propensity_2
     r_1_V = weights[0] * dt * propensity_2
