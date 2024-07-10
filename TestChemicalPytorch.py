@@ -53,7 +53,7 @@ def plotTrainingResult():
     # Average the erros and show convergence
     mse = pt.mean(errors, dim=0)
     outers = pt.arange(0, outer_iterations+1)
-    fig, ax = plt.subplots()
+    ax = plt.gca()
     plt.semilogy(outers, mse, label=r'PDE Error')
     rect = mpl.patches.Rectangle((3.5, plt.ylim()[0]), 7.5, 1, color='gray', alpha=0.2)
     ax.add_patch(rect)
