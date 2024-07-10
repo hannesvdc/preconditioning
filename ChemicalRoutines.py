@@ -71,7 +71,6 @@ def Collisions_Reactions(f_1_U, f0_U, f1_U, f_1_V, f0_V, f1_V, relaxation_times)
     c_1_U = -relaxation_times[0] * (f_1_U - weights[0] * phi_U)
     c_1_V = -relaxation_times[1] * (f_1_V - weights[0] * phi_V)
 
-	# Chemical Reactions
 	# reaction term for activator (U)
     propensity_1 = k1*A - k2*phi_U + k4*pt.multiply(pt.power(phi_U, 2.0), phi_V)
     r1_U  = weights[2] * dt * propensity_1
@@ -133,3 +132,4 @@ def LBM(x):
     phi_U = f_1_U + f0_U + f1_U # Density of U (index 0, all space)
     phi_V = f_1_V + f0_V + f1_V # Density of V (index 0, all space)
     return pt.cat((phi_U, phi_V), dim=1) # equivalent of np.hstack
+psi_lbm = lambda x: LBM(x) - x # One-liner
