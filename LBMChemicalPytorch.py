@@ -14,7 +14,7 @@ pt.set_default_dtype(pt.float64)
 
 # Load the data in memory
 print('Generating Training Data.')
-M = 25
+M = 50
 batch_size = 64
 dataset = ChemicalDataset(M=M)
 train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
