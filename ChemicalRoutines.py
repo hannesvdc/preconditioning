@@ -107,18 +107,21 @@ def _LatticeBM_Schnakenberg(f_1_U, f0_U, f1_U, f_1_V, f0_V, f1_V, relaxation_tim
     return f_1_U, f0_U, f1_U, f_1_V, f0_V, f1_V
 
 # Implements D1Q3 Lattice-Boltzmann
+# x is an (N_data, 6M) vector
 def LBM(x, T=T_psi):
 	# Lattice Parameters
-    M = x.shape[1] // 2
+    M = x.shape[1] // 6
     dx = 1.0 / M
     _N = int(T / dt)
     relaxation_times = pt.tensor([2.0/(1.0 + 2.0/cs_quad*d1*dt/dx**2), 2.0/(1.0 + 2.0/cs_quad*d2*dt/dx**2)])
 
 	# Initial Condition for Lattice-Boltzmann.
-    U = x[:,0:M]
-    V = x[:, M:]
-    f_1_U, f0_U, f1_U = weights[0] * U, weights[1] * U, weights[2] * U # Moving probs for U
-    f_1_V, f0_V, f1_V = weights[0] * V, weights[1] * V, weights[2] * V # Moving probs for V
+    f_1_U = x[:, 0:M]
+    f0_U  = x[:, M:2*M]
+    f1_U  = x[:, 2*M:3*M]
+    f_1_V = x[:, 3*M:4*M]
+    f0_V  = x[:, 4*M:5*M]
+    f1_V  = x[:, 5*M:]
 
     # Do the actual time-stepping
     for n in range(_N):
@@ -126,10 +129,8 @@ def LBM(x, T=T_psi):
                                                                        f_1_V, f0_V, f1_V,
                                                                        relaxation_times)
 
-	# Comppute the densities for plotting
-    phi_U = f_1_U + f0_U + f1_U # Density of U (index 0, all space)
-    phi_V = f_1_V + f0_V + f1_V # Density of V (index 0, all space)
-    return pt.cat((phi_U, phi_V), dim=1) # equivalent of np.hstack
+	# Concatenate all six concentrations horizontally
+    return pt.hstack((f_1_U, f0_U, f1_U, f_1_V, f0_V, f1_V)) # equivalent of np.hstack
 psi_lbm = lambda x: LBM(x) - x # One-liner
 
 # possible remedy: need to return f_1_U, f0_U, f1_U, f_1_V, f0_V and f1_V instead of an aggregate? 
