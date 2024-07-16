@@ -21,7 +21,7 @@ train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
 # Initialize the Network and the Optimizer (Adam)
 print('\nSetting Up the Newton-Krylov Neural Network.')
-inner_iterations = 4
+inner_iterations = 8
 outer_iterations = 3
 network = NewtonKrylovNetwork(psi_lbm, inner_iterations)
 loss_fn = NewtonKrylovLoss(network, psi_lbm, outer_iterations)

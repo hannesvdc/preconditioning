@@ -17,7 +17,7 @@ class ChemicalDataset(Dataset):
         self.data_size = 2 * self.M
         directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK_LBM/'
         filename = 'Steady_State_LBM_dt=1e-4.npy'
-        x0 = np.load(directory + filename).flatten()[0::self.subsample]
+        x0 = np.load(directory + filename).flatten()[::self.subsample]
         self.data = pt.from_numpy(x0[None,:] + self.rng.normal(0.0, self.scale, size=(self.N_data, self.data_size)))
 
     def __len__(self):
@@ -85,7 +85,7 @@ def Collisions_Reactions(f_1_U, f0_U, f1_U, f_1_V, f0_V, f1_V, relaxation_times)
 
     return c_1_U, c0_U, c1_U, r_1_U, r0_U, r1_U, c_1_V, c0_V, c1_V, r_1_V, r0_V, r1_V
 
-def _LatticeBM_Schnakenberg(f_1_U, f0_U, f1_U, f_1_V, f0_V, f1_V, relaxation_times, M):
+def _LatticeBM_Schnakenberg(f_1_U, f0_U, f1_U, f_1_V, f0_V, f1_V, relaxation_times):
 	# Streaming in intermediate variable
     c_1_U, c0_U, c1_U, r_1_U, r0_U, r1_U, c_1_V, c0_V, c1_V, r_1_V, r0_V, r1_V \
                     = Collisions_Reactions(f_1_U, f0_U, f1_U, f_1_V, f0_V, f1_V, relaxation_times)
@@ -124,11 +124,13 @@ def LBM(x, T=T_psi):
     for n in range(_N):
         f_1_U, f0_U, f1_U, f_1_V, f0_V, f1_V = _LatticeBM_Schnakenberg(f_1_U, f0_U, f1_U,
                                                                        f_1_V, f0_V, f1_V,
-                                                                       relaxation_times,
-                                                                       M)
+                                                                       relaxation_times)
 
 	# Comppute the densities for plotting
     phi_U = f_1_U + f0_U + f1_U # Density of U (index 0, all space)
     phi_V = f_1_V + f0_V + f1_V # Density of V (index 0, all space)
     return pt.cat((phi_U, phi_V), dim=1) # equivalent of np.hstack
 psi_lbm = lambda x: LBM(x) - x # One-liner
+
+# possible remedy: need to return f_1_U, f0_U, f1_U, f_1_V, f0_V and f1_V instead of an aggregate? 
+# Would be more accurate but same runtime?

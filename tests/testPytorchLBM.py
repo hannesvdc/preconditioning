@@ -2,6 +2,7 @@ import sys
 sys.path.append('../')
 
 import torch as pt
+import numpy as np
 import numpy.random as rd
 import matplotlib.pyplot as plt
 
@@ -21,15 +22,24 @@ U = U0 * pt.ones(M) + eps * pt.from_numpy(rng.normal(0.0, 1.0, M))
 V = V0 * pt.ones(M) + eps * pt.from_numpy(rng.normal(0.0, 1.0, M))
 
 # Run Lattice - Boltzmann
-x = pt.cat((pt.unsqueeze(U, 0), pt.unsqueeze(V, 0)), dim=1)
-phi = cr.LBM(x, T=T)
+phi = pt.cat((pt.unsqueeze(U, 0), pt.unsqueeze(V, 0)), dim=1)
+for n in range(200):
+    print(n)
+    phi = cr.LBM(phi, T=0.05)
 phi_U = phi[0,0:M]
 phi_V = phi[0,M:]
 
 # Plot found solution
+# Load the exact steady state
+ss_directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK_LBM/'
+ss_filename = 'Steady_State_LBM_dt=1e-4.npy'
+x_ss = np.load(ss_directory + ss_filename).flatten()
+U_ss, V_ss = x_ss[0:M], x_ss[M:]
 x_array = pt.linspace(0.0, 1.0, M)
 plt.plot(x_array.numpy(), phi_U.numpy(), label=r'$U(x)$', color='red')
 plt.plot(x_array.numpy(), phi_V.numpy(), label=r'$V(x)$', color='blue')
+plt.plot(x_array.numpy(), U_ss, label=r'$U(x)$ Reference')
+plt.plot(x_array.numpy(), V_ss, label=r'$V(x)$ Reference')
 plt.xlabel(r'$x$')
 plt.ylabel(r'$U, V$')
 plt.title('Lattice-Boltzmann Steady State')
