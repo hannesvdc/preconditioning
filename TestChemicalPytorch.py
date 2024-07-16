@@ -11,6 +11,10 @@ from ChemicalRoutines import psi_pde, ChemicalDataset
 pt.set_grad_enabled(False)
 pt.set_default_dtype(pt.float64)
 
+# Global variables to be shared by all testing routines
+T_psi = 0.05
+psi = lambda x: psi_pde(x, T_psi)
+
 def plotTrainingResult():
     # Load the stored steady state and perturb it
     M = 50
@@ -21,7 +25,7 @@ def plotTrainingResult():
     store_directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/R2N2/NKNet/'
     inner_iterations = 8
     outer_iterations = 10
-    network = NewtonKrylovNetwork(psi_pde, inner_iterations)
+    network = NewtonKrylovNetwork(psi, inner_iterations)
     network.load_state_dict(pt.load(store_directory + 'model_chemical_M='+str(M)+'_inner='+str(inner_iterations)+'.pth'))
 
     # Load the exact steady state
@@ -32,10 +36,10 @@ def plotTrainingResult():
 
     # Propagate the data 10 times
     errors = pt.zeros(x.shape[0], outer_iterations+1)
-    errors[:,0] = pt.norm(psi_pde(x), dim=1)
+    errors[:,0] = pt.norm(psi(x), dim=1)
     for n in range(outer_iterations):
         x = network.forward(x)
-        errors[:,n+1] = pt.norm(psi_pde(x), dim=1)
+        errors[:,n+1] = pt.norm(psi(x), dim=1)
 
     # Find the index with minimal error
     index = pt.argmin(errors[:, outer_iterations])
@@ -80,15 +84,15 @@ def compareParameters():
 
         # Load the network state
         store_directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/R2N2/NKNet/'
-        network = NewtonKrylovNetwork(psi_pde, inner_iterations)
+        network = NewtonKrylovNetwork(psi, inner_iterations)
         network.load_state_dict(pt.load(store_directory + 'model_chemical_M='+str(M)+'_inner='+str(inner_iterations)+'.pth'))
 
         # Propagate the data 10 times
         errors = pt.zeros(x.shape[0], outer_iterations+1)
-        errors[:,0] = pt.norm(psi_pde(x), dim=1)
+        errors[:,0] = pt.norm(psi(x), dim=1)
         for n in range(outer_iterations):
             x = network.forward(x)
-            errors[:,n+1] = pt.norm(psi_pde(x), dim=1)
+            errors[:,n+1] = pt.norm(psi(x), dim=1)
         mse = pt.mean(errors, dim=0)
 
         # Plot MSE

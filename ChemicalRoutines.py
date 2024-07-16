@@ -59,8 +59,6 @@ class ChemicalLBMDataset(Dataset):
 d1 = 5.e-4
 d2 = 0.06
 dt = 1.e-4
-T_psi = 0.05
-N = int(T_psi/ dt)
 
 # LBM Method parameters
 weights = np.array([1.0, 4.0, 1.0]) / 6.0 # D1Q3 weights
@@ -81,11 +79,12 @@ def f_pde_vectorized(x):
     return pt.hstack((f1, f2))
 
 # Apply right-hand side as update (with finite differences)
-def PDE_Timestepper_vectorized(x):
-	for _ in range(N):
-		x = x + dt * f_pde_vectorized(x) # the rhs is an (N_data, 2M) array
-	return x
-psi_pde = lambda x: PDE_Timestepper_vectorized(x) - x # One-liner
+def PDE_Timestepper_vectorized(x, T):
+    N = int(T / dt)
+    for _ in range(N):
+        x = x + dt * f_pde_vectorized(x) # the rhs is an (N_data, 2M) array
+    return x
+psi_pde = lambda x, T_psi: PDE_Timestepper_vectorized(x, T_psi) - x # One-liner
 
 def Collisions_Reactions(f_1_U, f0_U, f1_U, f_1_V, f0_V, f1_V, relaxation_times):
     phi_U = f_1_U + f0_U + f1_U # Density of U (index 0, all space)
@@ -136,7 +135,7 @@ def _LatticeBM_Schnakenberg(f_1_U, f0_U, f1_U, f_1_V, f0_V, f1_V, relaxation_tim
 
 # Implements D1Q3 Lattice-Boltzmann
 # x is an (N_data, 6M) vector
-def LBM(x, T=T_psi):
+def LBM(x, T):
 	# Lattice Parameters
     M = x.shape[1] // 6
     dx = 1.0 / M
@@ -159,4 +158,4 @@ def LBM(x, T=T_psi):
 
 	# Concatenate all six concentrations horizontally
     return pt.hstack((f_1_U, f0_U, f1_U, f_1_V, f0_V, f1_V)) # equivalent of np.hstack
-psi_lbm = lambda x, _T=T_psi: LBM(x, T=_T) - x # One-liner
+psi_lbm = lambda x, T_psi: LBM(x, T_psi) - x # One-liner

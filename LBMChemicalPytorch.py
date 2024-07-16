@@ -23,8 +23,10 @@ train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 print('\nSetting Up the Newton-Krylov Neural Network.')
 inner_iterations = 8
 outer_iterations = 3
-network = NewtonKrylovNetwork(psi_lbm, inner_iterations)
-loss_fn = NewtonKrylovLoss(network, psi_lbm, outer_iterations)
+T_psi = 0.05
+psi = lambda x: psi_lbm(x, T_psi)
+network = NewtonKrylovNetwork(psi, inner_iterations)
+loss_fn = NewtonKrylovLoss(network, psi, outer_iterations)
 optimizer = optim.Adam(network.parameters(), lr=0.001)
 scheduler = sch.StepLR(optimizer, step_size=1000, gamma=0.1)
 
