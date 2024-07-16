@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 
 from api.NewtonKrylovImpl import *
-from ChemicalRoutines import psi_lbm, ChemicalDataset
+from ChemicalRoutines import psi_lbm, ChemicalLBMDataset
 
 # Just some sanity pytorch settings
 pt.set_grad_enabled(True)
@@ -16,7 +16,7 @@ pt.set_default_dtype(pt.float64)
 print('Generating Training Data.')
 M = 50
 batch_size = 64
-dataset = ChemicalDataset(M=M)
+dataset = ChemicalLBMDataset(M=M)
 train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
 # Initialize the Network and the Optimizer (Adam)

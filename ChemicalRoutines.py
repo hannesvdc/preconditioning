@@ -25,6 +25,34 @@ class ChemicalDataset(Dataset):
 	
     def __getitem__(self, idx):
         return self.data[idx,:], pt.zeros(self.data_size)
+    
+
+class ChemicalLBMDataset(Dataset):
+    def __init__(self, M):
+        super().__init__()
+        self.seed = 100
+        self.scale = 0.1
+        self.rng = np.random.RandomState(seed=self.seed)
+        
+        self.N_data = 1024
+        self.M = M
+        self.subsample = 200 // self.M
+        self.data_size = 6 * self.M
+        directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK_LBM/'
+        filename = 'Steady_State_LBM_dt=1e-4.npy'
+        x0 = np.load(directory + filename).flatten()[::self.subsample]
+        UV_data = pt.from_numpy(x0[None,:] + self.rng.normal(0.0, self.scale, size=(self.N_data, 2*self.M)))
+
+        U = UV_data[:,0:M]
+        V = UV_data[:,M:]
+        self.data = pt.hstack((weights[0] * U, weights[1] * U, weights[2] * U, weights[0] * V, weights[1] * V, weights[2] * V))
+        print(self.data.shape)
+
+    def __len__(self):
+        return self.N_data
+	
+    def __getitem__(self, idx):
+        return self.data[idx,:], pt.zeros(self.data_size)
 
 # Setup the PDE timestepper and psi flowmap function
 # Parameters
@@ -132,6 +160,3 @@ def LBM(x, T=T_psi):
 	# Concatenate all six concentrations horizontally
     return pt.hstack((f_1_U, f0_U, f1_U, f_1_V, f0_V, f1_V)) # equivalent of np.hstack
 psi_lbm = lambda x: LBM(x) - x # One-liner
-
-# possible remedy: need to return f_1_U, f0_U, f1_U, f_1_V, f0_V and f1_V instead of an aggregate? 
-# Would be more accurate but same runtime?
