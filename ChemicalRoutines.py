@@ -159,4 +159,4 @@ def LBM(x, T=T_psi):
 
 	# Concatenate all six concentrations horizontally
     return pt.hstack((f_1_U, f0_U, f1_U, f_1_V, f0_V, f1_V)) # equivalent of np.hstack
-psi_lbm = lambda x: LBM(x) - x # One-liner
+psi_lbm = lambda x, _T=T_psi: LBM(x, T=_T) - x # One-liner
