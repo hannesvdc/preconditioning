@@ -54,10 +54,12 @@ class ChemicalLBMDataset(Dataset):
     def __getitem__(self, idx):
         return self.data[idx,:], pt.zeros(self.data_size)
 
-# Setup the PDE timestepper and psi flowmap function
+# Gillespie Model Parameters
 # Parameters
 d1 = 5.e-4
 d2 = 0.06
+
+# Time-Stepping Parameters
 dt = 1.e-4
 
 # LBM Method parameters

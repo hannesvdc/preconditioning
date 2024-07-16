@@ -61,7 +61,7 @@ try:
         train(epoch)
         scheduler.step()
 except KeyboardInterrupt:
-    print('Aborting Adam Training. Plotting Training Convergence')
+    print('Terminating Training. Plotting Training Error Convergence.')
 
 # Show the training results
 fig = plt.figure()
