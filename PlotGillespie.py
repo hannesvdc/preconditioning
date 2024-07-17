@@ -7,7 +7,7 @@ omega = 100
 T = '44.0'
 
 # Load Data
-data_directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/'
+data_directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/'
 checkpoint_filename = 'SSA_checkpoint_T=' + T + '_.npy'
 
 checkpoint_data = np.load(data_directory + checkpoint_filename)

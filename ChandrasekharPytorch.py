@@ -71,7 +71,7 @@ network.forward(dataset.data)
 train_losses = []
 train_counter = []
 log_rate = 4
-store_directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/R2N2/NKNet/'
+store_directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/R2N2/NKNet/'
 def train(epoch):
     network.train()
     for _, (data, _) in enumerate(train_loader):

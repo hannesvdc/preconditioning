@@ -36,7 +36,7 @@ def generateData():
         A[:,:,n] = np.copy(M)
 
     # Save the Training Data once and for all
-    directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/R2N2/'
+    directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/R2N2/'
     A_filename = 'A_Training_Data.npy'
     b_filename = 'b_Training_Data.npy'
     np.save(directory + A_filename, A)
@@ -44,7 +44,7 @@ def generateData():
 
 # General setup routine shared by all training routines
 def setupRecNet(fixedA=True, outer_iterations=3, inner_iterations=4, baseweight=4.0):
-    directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/R2N2/'
+    directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/R2N2/'
     A_filename = 'A_Training_Data.npy'
     b_filename = 'b_Training_Data.npy'
     b_data = np.load(directory + b_filename)

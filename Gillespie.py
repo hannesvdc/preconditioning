@@ -4,7 +4,7 @@ import autograd.numpy.random as rd
 import matplotlib.pyplot as plt
 import scipy.optimize as opt
 
-data_directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/'
+data_directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/'
 def SSA(U, V, L, T_end, omega, M, _d1, _d2, checkpoint=False, dT_checkpoint=None, data_dir=None, verbose=False):
 	# Setup Model and Reaction Constants
 	h = L / M#1.0/M
@@ -119,7 +119,7 @@ def findFixedPointNK():
 	
 	# Load the original steady-state solution
 	print('Loading Steady-State Solution.')
-	directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK/'
+	directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK/'
 	x0 = np.load(directory + 'PDE_steady_state_seed=100_.npy').flatten()
 	U_st, V_st = x0[0:M], x0[M:]
 
@@ -139,7 +139,7 @@ def findFixedPointNK():
 	print('Residue:', f_value, lg.norm(f_value), lg.norm(psi(solution)))
 
 	# Store Found Solution
-	directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK/'
+	directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK/'
 	filename = 'PDE_Fixed_Point_T='+str(T)+'_d2='+str(d2)+'_.npy'
 	np.save(directory + filename, solution)
 

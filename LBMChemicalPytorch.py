@@ -33,7 +33,7 @@ scheduler = sch.StepLR(optimizer, step_size=1000, gamma=0.1)
 # Training Routine
 train_losses = []
 train_counter = []
-store_directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/R2N2/NKNet/'
+store_directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/R2N2/NKNet/'
 def train(epoch):
     network.train()
     for _, (data, _) in enumerate(train_loader):

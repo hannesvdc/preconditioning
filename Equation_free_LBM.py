@@ -62,7 +62,7 @@ def plot_equation_free():
 	# Initial Condition
 	seed = 100
 	rng = rd.RandomState(seed=seed)
-	directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK_LBM/'
+	directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK_LBM/'
 	filename = 'Steady_State_LBM_dt=1e-4.npy'
 	x0 = np.load(directory + filename).flatten()
 
@@ -94,7 +94,7 @@ def NewtonKrylovEqFree():
 
 	# Load the initial condition (steady-state for now)
 	eps = 0.1
-	directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK_LBM/'
+	directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK_LBM/'
 	filename = 'Steady_State_LBM_dt=1e-4.npy'
 	x0 = np.load(directory + filename).flatten()
 	x_array = np.linspace(0.0, 1.0, M)

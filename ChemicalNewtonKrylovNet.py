@@ -27,7 +27,7 @@ def setupNeuralNetwork(T, outer_iterations=3, inner_iterations=4, baseweight=4.0
     seed = 100
     N_data = 1000
     rng = rd.RandomState(seed=seed)
-    directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK_LBM/'
+    directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK_LBM/'
     filename = 'Steady_State_LBM_dt=1e-4.npy'
     x0 = np.load(directory + filename).flatten()[0::10]
     #x0 = computeInitialCondition(M)
@@ -74,7 +74,7 @@ def trainNKNetAdam(T, n_inner):
     grad_norms = np.array(optimizer.gradient_norms)
 
     # Storing weights
-    directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/R2N2/NKNet/'
+    directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/R2N2/NKNet/'
     filename = 'Weights_Adam_Chemical_T=' + str(T) + '_inner_iterations=' + str(n_inner) + '_.npy'
     np.save(directory + filename, weights)
 

@@ -22,14 +22,14 @@ def plotTrainingResult():
     x = pt.clone(dataset.data)
 
     # Load the network state
-    store_directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/R2N2/NKNet/'
+    store_directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/R2N2/NKNet/'
     inner_iterations = 8
     outer_iterations = 10
     network = NewtonKrylovNetwork(psi, inner_iterations)
     network.load_state_dict(pt.load(store_directory + 'model_chemical_M='+str(M)+'_inner='+str(inner_iterations)+'.pth'))
 
     # Load the exact steady state
-    ss_directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK_LBM/'
+    ss_directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK_LBM/'
     ss_filename = 'Steady_State_LBM_dt=1e-4.npy'
     x_ss = np.load(ss_directory + ss_filename).flatten()[0::dataset.subsample]
     U_ss, V_ss = x_ss[0:M], x_ss[M:]
@@ -83,7 +83,7 @@ def compareParameters():
         x = pt.clone(dataset.data)
 
         # Load the network state
-        store_directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/R2N2/NKNet/'
+        store_directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/R2N2/NKNet/'
         network = NewtonKrylovNetwork(psi, inner_iterations)
         network.load_state_dict(pt.load(store_directory + 'model_chemical_M='+str(M)+'_inner='+str(inner_iterations)+'.pth'))
 

@@ -83,7 +83,7 @@ def testAbRecNet():
                         -1.13633718 ,-0.39309495 , 0.86202745, -0.03033491]) # Adam weights with random A and b
     
     # Load training data
-    directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/R2N2/'
+    directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/R2N2/'
     A_filename = 'A_Training_Data.npy'
     b_filename = 'b_Training_Data.npy'
     A_data = np.load(directory + A_filename)

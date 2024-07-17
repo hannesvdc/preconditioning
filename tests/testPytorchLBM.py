@@ -31,14 +31,15 @@ x = pt.unsqueeze(pt.hstack((f_1_U, f0_U, f1_U, f_1_V, f0_V, f1_V)), dim=0)
 
 # Run Lattice - Boltzmann
 for n in range(N):
+    print('n =', n)
     x = cr.LBM(x, T=T_psi)
-print(pt.norm(cr.psi_lbm(x, _T=1.0)))
+print(pt.norm(cr.psi_lbm(x, T_psi=1.0)))
 phi_U = x[0,0:M] + x[0,M:2*M] + x[0,2*M:3*M]
 phi_V = x[0,3*M:4*M] + x[0,4*M:5*M] + x[0,5*M:]
 
 # Plot found solution
 # Load the exact steady state
-ss_directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK_LBM/'
+ss_directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK_LBM/'
 ss_filename = 'Steady_State_LBM_dt=1e-4.npy'
 x_ss = np.load(ss_directory + ss_filename).flatten()
 U_ss, V_ss = x_ss[0:M], x_ss[M:]

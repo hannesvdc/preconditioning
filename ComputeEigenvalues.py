@@ -49,7 +49,7 @@ def PDE_Eigenvalues():
 	if point == 'unstable':
 		x = np.concatenate((2.0*np.ones(M), 0.75*np.ones(M)))
 	else:
-		directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK/'
+		directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK/'
 		x = np.load(directory + 'PDE_steady_state_seed=100_.npy').flatten()
 	f = PDE_psi(x)
 	dpsi_v = lambda v: d_PDE_psi(x, v, f)
@@ -80,7 +80,7 @@ def EQF_LBM_Eigenvalues():
 	if point == 'unstable':
 		x = np.concatenate((2.0*np.ones(M), 0.75*np.ones(M)))
 	else:
-		directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK_LBM/'
+		directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK_LBM/'
 		filename = 'Steady_State_LBM_dt=1e-4.npy'
 		x = np.load(directory + filename).flatten()
 	f = EQF_psi(x)
@@ -113,7 +113,7 @@ def Preconditioned_Eigenvalues():
 	if point == 'unstable':
 		x = np.concatenate((2.0*np.ones(M), 0.75*np.ones(M)))
 	else:
-		directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK_LBM/'
+		directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK_LBM/'
 		filename = 'Steady_State_LBM_dt=1e-4.npy'
 		x = np.load(directory + filename).flatten()
 	f_eqf = EQF_psi(x)

@@ -104,7 +104,7 @@ def findFixedPointNK():
 	
 	# Load the original steady-state solution
 	print('Loading Steady-State Solution.')
-	directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK/'
+	directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK/'
 	x0 = onp.load(directory + 'PDE_steady_state_seed=100_.npy').flatten()
 	U_st, V_st = x0[0:M], x0[M:]
 
@@ -125,7 +125,7 @@ def findFixedPointNK():
 	print('Residue:', f_value, lg.norm(f_value), lg.norm(f_fast(solution, d1, d2, M)))
 
 	# Store Found Solution
-	directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK/'
+	directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK/'
 	filename = 'PDE_Fixed_Point_T='+str(T)+'_d2='+str(d2)+'_.npy'
 	onp.save(directory + filename, solution)
 
@@ -173,7 +173,7 @@ def Plot_PDE_Solution():
 	print('psi PDE', lg.norm(psi(np.concatenate((U, V)))))
 	
 	# Storing Result for future reference
-	directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/'
+	directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/'
 	filename = 'PDE_steady_state_seed='+str(seed)+'_.npy'
 	np.save(directory +  filename, np.vstack((U,V)))
 

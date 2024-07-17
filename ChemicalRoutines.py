@@ -15,7 +15,7 @@ class ChemicalDataset(Dataset):
         self.M = M
         self.subsample = 200 // self.M
         self.data_size = 2 * self.M
-        directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK_LBM/'
+        directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK_LBM/'
         filename = 'Steady_State_LBM_dt=1e-4.npy'
         x0 = np.load(directory + filename).flatten()[::self.subsample]
         self.data = pt.from_numpy(x0[None,:] + self.rng.normal(0.0, self.scale, size=(self.N_data, self.data_size)))
@@ -38,7 +38,7 @@ class ChemicalLBMDataset(Dataset):
         self.M = M
         self.subsample = 200 // self.M
         self.data_size = 6 * self.M
-        directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK_LBM/'
+        directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK_LBM/'
         filename = 'Steady_State_LBM_dt=1e-4.npy'
         x0 = np.load(directory + filename).flatten()[::self.subsample]
         UV_data = pt.from_numpy(x0[None,:] + self.rng.normal(0.0, self.scale, size=(self.N_data, 2*self.M)))

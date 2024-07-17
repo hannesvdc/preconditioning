@@ -132,10 +132,6 @@ def plot_LBM():
 	# Run Lattice - Boltzmann
 	phi_U, phi_V = LBM(U, V, T, verbose=True)
 
-	# Storing the steady-state for later use
-	directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK_LBM/'
-	filename = 'Steady_State_LBM_dt=1e-4.npy'
-	#np.save(directory + filename, np.vstack((phi_U, phi_V)))
 
 	# Plot found solution
 	x_array = np.linspace(0.0, 1.0, M)
@@ -154,7 +150,7 @@ def NewtonKrylovLBM(store=False):
 	# Load the initial condition (steady-state for now)
 	eps = 0.1
 	rng = rd.RandomState()
-	directory = '/Users/hannesvdc/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK_LBM/'
+	directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK_LBM/'
 	filename = 'Steady_State_LBM_dt=1e-4.npy'
 	x0 = np.load(directory + filename).flatten()
 	x0 = x0 + eps*rng.normal(0.0, 1.0, x0.size)
