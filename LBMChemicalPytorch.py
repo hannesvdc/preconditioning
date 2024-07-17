@@ -11,6 +11,8 @@ from ChemicalRoutines import psi_lbm, ChemicalLBMDataset
 # Just some sanity pytorch settings
 pt.set_grad_enabled(True)
 pt.set_default_dtype(pt.float64)
+T_psi = 0.05
+psi = lambda x: psi_lbm(x, T_psi)
 
 # Load the data in memory
 print('Generating Training Data.')
@@ -23,8 +25,6 @@ train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 print('\nSetting Up the Newton-Krylov Neural Network.')
 inner_iterations = 8
 outer_iterations = 3
-T_psi = 0.05
-psi = lambda x: psi_lbm(x, T_psi)
 network = NewtonKrylovNetwork(psi, inner_iterations)
 loss_fn = NewtonKrylovLoss(network, psi, outer_iterations)
 optimizer = optim.Adam(network.parameters(), lr=0.001)
