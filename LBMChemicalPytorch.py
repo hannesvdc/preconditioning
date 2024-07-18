@@ -11,6 +11,8 @@ from ChemicalRoutines import psi_lbm, ChemicalLBMDataset
 # Just some sanity pytorch settings
 pt.set_grad_enabled(True)
 pt.set_default_dtype(pt.float64)
+
+# Create function to solve
 T_psi = 0.05
 psi = lambda x: psi_lbm(x, T_psi)
 

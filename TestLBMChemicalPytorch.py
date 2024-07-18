@@ -5,7 +5,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 from api.NewtonKrylovImpl import *
-from ChemicalRoutines import psi_lbm, ChemicalDataset
+from ChemicalRoutines import psi_lbm, ChemicalLBMDataset
 
 # Just some sanity pytorch settings
 pt.set_grad_enabled(False)
@@ -18,7 +18,7 @@ psi = lambda x: psi_lbm(x, T_psi)
 def plotTrainingResult():
     # Load the stored steady state and perturb it
     M = 50
-    dataset = ChemicalDataset(M=M)
+    dataset = ChemicalLBMDataset(M=M)
     x = pt.clone(dataset.data)
 
     # Load the network state
@@ -43,8 +43,8 @@ def plotTrainingResult():
 
     # Find the index with minimal error
     index = pt.argmin(errors[:, outer_iterations])
-    U = x[index, 0:M]
-    V = x[index, M:]
+    U = x[index, 0:M] + x[index, M:2*M] + x[index, 2*M:3*M]
+    V = x[index, 3*M:4*M] + x[index, 4*M:5*M] + x[index, 5*M:]
     x_array = np.linspace(0.0, 1.0, M)
     plt.plot(x_array, U_ss, label=r'Steady State $U(x)$', color='green')
     plt.plot(x_array, V_ss, label=r'Steady State $V(x)$', color='orange')
@@ -60,9 +60,8 @@ def plotTrainingResult():
     plt.figure()
     ax = plt.gca()
     plt.semilogy(outers, mse, label=r'PDE Error')
-    rect = mpl.patches.Rectangle((3.5, plt.ylim()[0]), 7.5, 1, color='gray', alpha=0.2)
+    rect = mpl.patches.Rectangle((3.5, plt.ylim()[0]), 7.5, plt.ylim()[1], color='gray', alpha=0.2)
     ax.add_patch(rect)
-    plt.ylim((plt.ylim()[0], 1.0))
     plt.xlabel('# Outer Iterations')
     plt.title(r'$M = $' + str(M) + r', $n_{inner} = $' + str(inner_iterations))
     plt.legend()
