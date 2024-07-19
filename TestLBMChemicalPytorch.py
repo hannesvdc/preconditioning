@@ -23,7 +23,7 @@ def plotTrainingResult():
 
     # Load the network state
     store_directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/R2N2/NKNet/'
-    inner_iterations = 4
+    inner_iterations = 8
     outer_iterations = 10
     network = NewtonKrylovNetwork(psi, inner_iterations)
     network.load_state_dict(pt.load(store_directory + 'model_lbm_chemical_M='+str(M)+'_inner='+str(inner_iterations)+'.pth'))
