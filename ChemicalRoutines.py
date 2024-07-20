@@ -25,7 +25,6 @@ class ChemicalDataset(Dataset):
 	
     def __getitem__(self, idx):
         return self.data[idx,:], pt.zeros(self.data_size)
-    
 
 class ChemicalLBMDataset(Dataset):
     def __init__(self, M):
@@ -161,3 +160,23 @@ def LBM(x, T):
 	# Concatenate all six concentrations horizontally
     return pt.hstack((f_1_U, f0_U, f1_U, f_1_V, f0_V, f1_V)) # equivalent of np.hstack
 psi_lbm = lambda x, T_psi: LBM(x, T_psi) - x # One-liner
+
+def _LBM_marginal(x, T):
+    M = x.shape[1] // 2
+    U ,V = x[:,0:M], x[:,M:]
+    dx = 1.0 / M
+    _N = int(T / dt)
+    relaxation_times = pt.tensor([2.0/(1.0 + 2.0/cs_quad*d1*dt/dx**2), 2.0/(1.0 + 2.0/cs_quad*d2*dt/dx**2)])
+
+    f_1_U, f0_U, f1_U = weights[0]*U, weights[1]*U, weights[2]*U
+    f_1_V, f0_V, f1_V = weights[0]*V, weights[1]*V, weights[2]*V
+
+    # Do the actual time-stepping
+    for n in range(_N):
+        f_1_U, f0_U, f1_U, f_1_V, f0_V, f1_V = _LatticeBM_Schnakenberg(f_1_U, f0_U, f1_U,
+                                                                       f_1_V, f0_V, f1_V,
+                                                                       relaxation_times)
+    # Returning
+    U = f_1_U + f0_U + f1_U
+    V = f_1_V + f0_V + f1_V
+    return pt.hstack((U, V))
