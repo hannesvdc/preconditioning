@@ -140,19 +140,19 @@ def LBM(x, T):
 	# Lattice Parameters
     M = x.shape[1] // 6
     dx = 1.0 / M
-    _N = int(T / dt)
+    N = int(T / dt)
     relaxation_times = pt.tensor([2.0/(1.0 + 2.0/cs_quad*d1*dt/dx**2), 2.0/(1.0 + 2.0/cs_quad*d2*dt/dx**2)])
 
 	# Initial Condition for Lattice-Boltzmann.
-    f_1_U = x[:, 0:M]
-    f0_U  = x[:, M:2*M]
+    f_1_U = x[:, 0*M:1*M]
+    f0_U  = x[:, 1*M:2*M]
     f1_U  = x[:, 2*M:3*M]
     f_1_V = x[:, 3*M:4*M]
     f0_V  = x[:, 4*M:5*M]
     f1_V  = x[:, 5*M:]
 
     # Do the actual time-stepping
-    for n in range(_N):
+    for _ in range(N):
         f_1_U, f0_U, f1_U, f_1_V, f0_V, f1_V = _LatticeBM_Schnakenberg(f_1_U, f0_U, f1_U,
                                                                        f_1_V, f0_V, f1_V,
                                                                        relaxation_times)
@@ -160,23 +160,3 @@ def LBM(x, T):
 	# Concatenate all six concentrations horizontally
     return pt.hstack((f_1_U, f0_U, f1_U, f_1_V, f0_V, f1_V)) # equivalent of np.hstack
 psi_lbm = lambda x, T_psi: LBM(x, T_psi) - x # One-liner
-
-def _LBM_marginal(x, T):
-    M = x.shape[1] // 2
-    U ,V = x[:,0:M], x[:,M:]
-    dx = 1.0 / M
-    _N = int(T / dt)
-    relaxation_times = pt.tensor([2.0/(1.0 + 2.0/cs_quad*d1*dt/dx**2), 2.0/(1.0 + 2.0/cs_quad*d2*dt/dx**2)])
-
-    f_1_U, f0_U, f1_U = weights[0]*U, weights[1]*U, weights[2]*U
-    f_1_V, f0_V, f1_V = weights[0]*V, weights[1]*V, weights[2]*V
-
-    # Do the actual time-stepping
-    for n in range(_N):
-        f_1_U, f0_U, f1_U, f_1_V, f0_V, f1_V = _LatticeBM_Schnakenberg(f_1_U, f0_U, f1_U,
-                                                                       f_1_V, f0_V, f1_V,
-                                                                       relaxation_times)
-    # Returning
-    U = f_1_U + f0_U + f1_U
-    V = f_1_V + f0_V + f1_V
-    return pt.hstack((U, V))
