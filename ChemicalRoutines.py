@@ -160,3 +160,34 @@ def LBM(x, T):
 	# Concatenate all six concentrations horizontally
     return pt.hstack((f_1_U, f0_U, f1_U, f_1_V, f0_V, f1_V)) # equivalent of np.hstack
 psi_lbm = lambda x, T_psi: LBM(x, T_psi) - x # One-liner
+
+# Dt is the total step size (dt + extrapolation)
+def EF_LBM(x, T, n, Dt):
+    M = x.shape[1] // 2
+    N = int(T / Dt)
+    ext_factor = (Dt - n*dt) / dt # n*dt is the total microscopic integration time
+    print(ext_factor)
+
+    U, V = x[:,0:M], x[:,M:]
+    for counter in range(N):
+        print('T = ', counter*Dt)
+        # Lift the current macroscopic state (x) to a new microscopic state
+        f_1_U, f0_U, f1_U = weights[0] * U, weights[1] * U, weights[2] * U
+        f_1_V, f0_V, f1_V = weights[0] * V, weights[1] * V, weights[2] * V
+        y = pt.hstack((f_1_U, f0_U, f1_U, f_1_V, f0_V, f1_V))
+
+		# Do n-1 microscopic steps, record the state, do one extra after that
+        yp = LBM(y, (n-1)*dt)
+        Up, Vp = yp[:,0:M] + yp[:,M:2*M] + yp[:,2*M:3*M], yp[:,3*M:4*M] + yp[:,4*M:5*M] + yp[:,5*M:]
+        yq = LBM(yp, dt)
+        Uq, Vq = yq[:,0:M] + yq[:,M:2*M] + yq[:,2*M:3*M], yq[:,3*M:4*M] + yq[:,4*M:5*M] + yq[:,5*M:]
+        print(yp.isnan().any(), yq.isnan().any())
+
+		# Extrapolation
+        U = Uq + ext_factor * (Uq - Up)
+        V = Vq + ext_factor * (Vq - Vp)
+
+    x = pt.hstack((U, V))
+    return x
+
+psi_ef_lbm = lambda x, T_psi, dt, Dt: EF_LBM(x, T_psi, dt, Dt)
