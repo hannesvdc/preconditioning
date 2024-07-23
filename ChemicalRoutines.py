@@ -162,32 +162,58 @@ def LBM(x, T):
 psi_lbm = lambda x, T_psi: LBM(x, T_psi) - x # One-liner
 
 # Dt is the total step size (dt + extrapolation)
-def EF_LBM(x, T, n, Dt):
-    M = x.shape[1] // 2
-    N = int(T / Dt)
-    ext_factor = (Dt - n*dt) / dt # n*dt is the total microscopic integration time
-    print(ext_factor)
+def equation_free_LBM(x, T_psi, n_micro, dT_min, dT_max, tolerance=0.1):
+    M = len(x) // 2
+    dT = min(dt, dT_max) # dT is the extrapolation size only, the total time interval is n_micro * dt + dT
+    total_micro_time = 0.0
+	
+    t = 0.0 # The current simulation time
+    U, V = x[0:M], x[M:]
+    while t + n_micro * dt + dT <= T_psi:
+        print('t =', t)
 
-    U, V = x[:,0:M], x[:,M:]
-    for counter in range(N):
-        print('T = ', counter*Dt)
-        # Lift the current macroscopic state (x) to a new microscopic state
+        # Lift the current macroscopic state x = (U, V) 
         f_1_U, f0_U, f1_U = weights[0] * U, weights[1] * U, weights[2] * U
         f_1_V, f0_V, f1_V = weights[0] * V, weights[1] * V, weights[2] * V
-        y = pt.hstack((f_1_U, f0_U, f1_U, f_1_V, f0_V, f1_V))
+        y = pt.unsqueeze(pt.hstack((f_1_U, f0_U, f1_U, f_1_V, f0_V, f1_V)), dim=0) # Shape [1, 6*M]
 
-		# Do n-1 microscopic steps, record the state, do one extra after that
-        yp = LBM(y, (n-1)*dt)
-        Up, Vp = yp[:,0:M] + yp[:,M:2*M] + yp[:,2*M:3*M], yp[:,3*M:4*M] + yp[:,4*M:5*M] + yp[:,5*M:]
+        # Microscopic Time-Integration. Integrate first over n_micro-1 steps, and do one more after that
+        yp = LBM(y, (n_micro-1)*dt)
+        Up, Vp = yp[0, 0:M] + yp[0, M:2*M] + yp[0, 2*M:3*M], yp[0, 3*M:4*M] + yp[0, 4*M:5*M] + yp[0, 5*M:]
         yq = LBM(yp, dt)
-        Uq, Vq = yq[:,0:M] + yq[:,M:2*M] + yq[:,2*M:3*M], yq[:,3*M:4*M] + yq[:,4*M:5*M] + yq[:,5*M:]
-        print(yp.isnan().any(), yq.isnan().any())
+        Uq, Vq = yq[0, 0:M] + yq[0, M:2*M] + yq[0, 2*M:3*M], yq[0, 3*M:4*M] + yq[0, 4*M:5*M] + yq[0, 5*M:]
+        total_micro_time += n_micro * dt
+
+        # Record the macroscopic time derivative
+        dUdt = (Uq - Up) / dt
+        dVdt = (Vq - Vp) / dt
 
 		# Extrapolation
-        U = Uq + ext_factor * (Uq - Up)
-        V = Vq + ext_factor * (Vq - Vp)
+        while True:
+            U_new = Uq + dT * dUdt
+            V_new = Vq + dT * dVdt
 
-    x = pt.hstack((U, V))
+			# Do adaptive stepsizing
+            print('Trying dT =', dT)
+            if max(pt.norm(U_new - Uq), pt.norm(V_new - Vq)) <= M*tolerance:
+                U = pt.clone(U_new)
+                V = pt.clone(V_new)
+                t = t + n_micro*dt + dT
+                print('Sucess!')
+                dT = min(1.2 * dT, dT_max)
+                break
+            else:
+                dT = max(0.5 * dT, dT_min)
+    print(pt.mean(U), pt.mean(V))
+
+	# Patch up the simulation to reach T_end
+    print('Patching Dynamics up to time', T_psi, ' with interval', T_psi - t)
+    f_1_U, f0_U, f1_U = weights[0] * U, weights[1] * U, weights[2] * U
+    f_1_V, f0_V, f1_V = weights[0] * V, weights[1] * V, weights[2] * V
+    y = pt.unsqueeze(pt.hstack((f_1_U, f0_U, f1_U, f_1_V, f0_V, f1_V)), dim=0)
+    y = LBM(y, T_psi - t)
+    total_micro_time += T_psi - t
+    print(total_micro_time)
+    x = pt.hstack((y[0, 0:M] + y[0, M:2*M] + y[0, 2*M:3*M], y[0, 3*M:4*M] + y[0, 4*M:5*M] + y[0, 5*M:]))
     return x
-
-psi_ef_lbm = lambda x, T_psi, dt, Dt: EF_LBM(x, T_psi, dt, Dt)
+psi_ef_lbm = lambda x, T_psi, dt, Dt: equation_free_LBM(x, T_psi, dt, Dt)
