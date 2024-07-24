@@ -161,8 +161,8 @@ def LBM(x, T):
     return pt.hstack((f_1_U, f0_U, f1_U, f_1_V, f0_V, f1_V)) # equivalent of np.hstack
 psi_lbm = lambda x, T_psi: LBM(x, T_psi) - x # One-liner
 
-# Dt is the total step size (dt + extrapolation)
-def equation_free_LBM(x, T_psi, n_micro, dT_min, dT_max, tolerance=0.1):
+# Dt is the total step size (dt + extrapolation). This funtion is not vectorized.
+def _equation_free_LBM_(x, T_psi, n_micro, dT_min, dT_max, tolerance):
     M = len(x) // 2
     dT = dT_max # dT is the extrapolation size only, the total time interval is n_micro * dt + dT
     total_micro_time = 0.0
@@ -170,8 +170,6 @@ def equation_free_LBM(x, T_psi, n_micro, dT_min, dT_max, tolerance=0.1):
     t = 0.0 # The current simulation time
     U, V = x[0:M], x[M:]
     while t + n_micro * dt + dT <= T_psi:
-        print('t =', t)
-
         # Lift the current macroscopic state x = (U, V) 
         f_1_U, f0_U, f1_U = weights[0] * U, weights[1] * U, weights[2] * U
         f_1_V, f0_V, f1_V = weights[0] * V, weights[1] * V, weights[2] * V
@@ -194,26 +192,23 @@ def equation_free_LBM(x, T_psi, n_micro, dT_min, dT_max, tolerance=0.1):
             V_new = Vq + dT * dVdt
 
 			# Do adaptive stepsizing
-            print('Trying dT =', dT)
             if max(pt.norm(U_new - Uq), pt.norm(V_new - Vq)) <= M*tolerance:
                 U = pt.clone(U_new)
                 V = pt.clone(V_new)
                 t = t + n_micro*dt + dT
-                print('Sucess!')
                 dT = min(1.2 * dT, dT_max)
                 break
             else:
                 dT = max(0.5 * dT, dT_min)
-    print(pt.mean(U), pt.mean(V))
 
 	# Patch up the simulation to reach T_end
-    print('Patching Dynamics up to time', T_psi, ' with interval', T_psi - t)
     f_1_U, f0_U, f1_U = weights[0] * U, weights[1] * U, weights[2] * U
     f_1_V, f0_V, f1_V = weights[0] * V, weights[1] * V, weights[2] * V
     y = pt.unsqueeze(pt.hstack((f_1_U, f0_U, f1_U, f_1_V, f0_V, f1_V)), dim=0)
     y = LBM(y, T_psi - t)
     total_micro_time += T_psi - t
-    print(total_micro_time)
     x = pt.hstack((y[0, 0:M] + y[0, M:2*M] + y[0, 2*M:3*M], y[0, 3*M:4*M] + y[0, 4*M:5*M] + y[0, 5*M:]))
     return x
+def equation_free_LBM(x, T_psi, n_micro, dT_min, dT_max, tolerance, axis=0): # Vectorized version of EqF-LBM.
+    return pt.stack([_equation_free_LBM_(x_i, T_psi, n_micro, dT_min, dT_max, tolerance) for x_i in pt.unbind(x, dim=axis) ], dim=axis)
 psi_ef_lbm = lambda x, T_psi, n_micro, dT_min, dT_max, tolerance: equation_free_LBM(x, T_psi, n_micro, dT_min, dT_max, tolerance) - x

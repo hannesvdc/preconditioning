@@ -40,9 +40,9 @@ U_LBM, V_LBM = y[0, 0:M] + y[0, M:2*M] + y[0, 2*M:3*M], y[0, 3*M:4*M] + y[0, 4*M
 
 # Run Lattice - Boltzmann
 print('Running EqF-LBM')
-x = pt.hstack((U, V))
+x = pt.unsqueeze(pt.hstack((U, V)), dim=0)
 x = cr.equation_free_LBM(x, Tf, n_micro, dT_min, dT_max, tolerance)
-U, V = x[0:M], x[M:]
+U, V = x[0,0:M], x[0,M:]
 print('Psi EqF-LBM', pt.norm(cr.psi_ef_lbm(x, 1.0, n_micro, dT_min, dT_max, tolerance))) # Gets a value of 0.0052, which is nice!
 
 # Plot found solution
