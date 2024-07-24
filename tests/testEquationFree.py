@@ -15,7 +15,7 @@ n_micro = 1000
 dT_min = 0.0
 dT_max = 1.e-1
 Tf = 100.0
-tolerance = 1.e-4
+tolerance = 1.e-3
 
 # Sample Initial Condition from the Unstable Steady-State
 seed = 100
@@ -43,7 +43,7 @@ print('Running EqF-LBM')
 x = pt.hstack((U, V))
 x = cr.equation_free_LBM(x, Tf, n_micro, dT_min, dT_max, tolerance)
 U, V = x[0:M], x[M:]
-print('Psi EqF-LBM', pt.norm(cr.psi_ef_lbm(x, 1.0, n_micro, dT_min, dT_max, tolerance))) # Gets a value of 0.1, will be refined by NKNet
+print('Psi EqF-LBM', pt.norm(cr.psi_ef_lbm(x, 1.0, n_micro, dT_min, dT_max, tolerance))) # Gets a value of 0.0052, which is nice!
 
 # Plot found solution
 plt.plot(x_array, U.numpy(), label=r'$U(x) \ EqF-LBM$')

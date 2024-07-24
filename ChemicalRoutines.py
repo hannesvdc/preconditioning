@@ -164,7 +164,7 @@ psi_lbm = lambda x, T_psi: LBM(x, T_psi) - x # One-liner
 # Dt is the total step size (dt + extrapolation)
 def equation_free_LBM(x, T_psi, n_micro, dT_min, dT_max, tolerance=0.1):
     M = len(x) // 2
-    dT = min(dt, dT_max) # dT is the extrapolation size only, the total time interval is n_micro * dt + dT
+    dT = dT_max # dT is the extrapolation size only, the total time interval is n_micro * dt + dT
     total_micro_time = 0.0
 	
     t = 0.0 # The current simulation time
