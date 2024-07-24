@@ -5,8 +5,11 @@ import numpy as np
 
 # The data impleementation and loader class
 class ChemicalDataset(Dataset):
-    def __init__(self, M):
+    def __init__(self, M, device='cpu'):
         super().__init__()
+        self.device = device
+        self.dtype = pt.float32 if self.device == 'mps' else pt.float64
+
         self.seed = 100
         self.scale = 0.1
         self.rng = np.random.RandomState(seed=self.seed)
@@ -18,13 +21,13 @@ class ChemicalDataset(Dataset):
         directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK_LBM/'
         filename = 'Steady_State_LBM_dt=1e-4.npy'
         x0 = np.load(directory + filename).flatten()[::self.subsample]
-        self.data = pt.from_numpy(x0[None,:] + self.rng.normal(0.0, self.scale, size=(self.N_data, self.data_size)))
+        self.data = pt.from_numpy(x0[None,:] + self.rng.normal(0.0, self.scale, size=(self.N_data, self.data_size))).to(device=self.device, dtype=self.dtype)
 
     def __len__(self):
         return self.N_data
 	
     def __getitem__(self, idx):
-        return self.data[idx,:], pt.zeros(self.data_size)
+        return self.data[idx,:], pt.zeros(self.data_size, device=self.device, dtype=self.dtype)
 
 class ChemicalLBMDataset(Dataset):
     def __init__(self, M):
