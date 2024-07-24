@@ -216,4 +216,4 @@ def equation_free_LBM(x, T_psi, n_micro, dT_min, dT_max, tolerance=0.1):
     print(total_micro_time)
     x = pt.hstack((y[0, 0:M] + y[0, M:2*M] + y[0, 2*M:3*M], y[0, 3*M:4*M] + y[0, 4*M:5*M] + y[0, 5*M:]))
     return x
-psi_ef_lbm = lambda x, T_psi, dt, Dt: equation_free_LBM(x, T_psi, dt, Dt)
+psi_ef_lbm = lambda x, T_psi, n_micro, dT_min, dT_max, tolerance: equation_free_LBM(x, T_psi, n_micro, dT_min, dT_max, tolerance) - x
