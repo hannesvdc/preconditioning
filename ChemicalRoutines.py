@@ -166,6 +166,7 @@ psi_lbm = lambda x, T_psi: LBM(x, T_psi) - x # One-liner
 
 # Dt is the total step size (dt + extrapolation). This funtion is not vectorized.
 def _equation_free_LBM_(x, T_psi, n_micro, dT_min, dT_max, tolerance):
+    #print('here')
     M = len(x) // 2
     dT = dT_max # dT is the extrapolation size only, the total time interval is n_micro * dt + dT
     total_micro_time = 0.0
@@ -213,5 +214,6 @@ def _equation_free_LBM_(x, T_psi, n_micro, dT_min, dT_max, tolerance):
     x = pt.hstack((y[0, 0:M] + y[0, M:2*M] + y[0, 2*M:3*M], y[0, 3*M:4*M] + y[0, 4*M:5*M] + y[0, 5*M:]))
     return x
 def equation_free_LBM(x, T_psi, n_micro, dT_min, dT_max, tolerance, axis=0): # Vectorized version of EqF-LBM.
+    print(len(pt.unbind(x, dim=axis)))
     return pt.stack([_equation_free_LBM_(x_i, T_psi, n_micro, dT_min, dT_max, tolerance) for x_i in pt.unbind(x, dim=axis) ], dim=axis)
 psi_ef_lbm = lambda x, T_psi, n_micro, dT_min, dT_max, tolerance: equation_free_LBM(x, T_psi, n_micro, dT_min, dT_max, tolerance) - x
