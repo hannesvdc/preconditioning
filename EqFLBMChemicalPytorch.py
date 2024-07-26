@@ -45,17 +45,15 @@ def train(epoch):
     network.train()
     for _, (data, _) in enumerate(train_loader):
         optimizer.zero_grad()
-        print('zerograd done')
 
         # Compute Loss. NewtonKrylovLoss takes care of network forwards
         loss = loss_fn(data)
-        print('computed loss')
 
-        # Compute loss gradient and do one optimization step
+        # Compute loss gradient
         loss.backward()
-        print('computed loss gradient')
+
+        # Do one Adam optimization step
         optimizer.step()
-        print('did adam step')
 
     # Some housekeeping
     print('Train Epoch: {} \tLoss: {:.6f} \tLoss Gradient: {:.6f}'.format(epoch, loss.item(), pt.norm(network.inner_layer.weights.grad)))

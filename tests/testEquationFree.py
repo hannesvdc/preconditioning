@@ -9,6 +9,9 @@ import matplotlib.pyplot as plt
 
 import ChemicalRoutines as cr
 
+pt.set_grad_enabled(True)
+pt.set_default_dtype(pt.float64)
+
 # Method parameters
 M = 200
 dt = 1.e-4 # microscopic LBM time step size
@@ -27,7 +30,7 @@ ss_filename = 'Steady_State_LBM_dt=1e-4.npy'
 x_ss = np.load(ss_directory + ss_filename).flatten()
 U_ss, V_ss = x_ss[0:M], x_ss[M:]
 x_array = np.linspace(0.0, 1.0, M)
-N_data = 2
+N_data = 1024
 U = pt.from_numpy(U_ss + eps * rng.normal(0.0, 1.0, size=(N_data, M)))
 V = pt.from_numpy(V_ss + eps * rng.normal(0.0, 1.0, size=(N_data, M)))
 
