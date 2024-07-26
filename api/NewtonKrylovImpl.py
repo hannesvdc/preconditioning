@@ -18,7 +18,6 @@ class NewtonKrylovLayer(nn.Module):
         weights = pt.zeros(self.n_weights)
         self.weights = nn.Parameter(weights)  # nn.Parameter is a Tensor that's a module parameter.
 
-
     def forward(self, x):
         y = pt.zeros_like(x)     # y stores the variable that solves f(xk, y) = 0 (i.e. the linear system)
         print('Computing F value')
@@ -32,10 +31,10 @@ class NewtonKrylovLayer(nn.Module):
             print('\nInner iteration ', n)
             yp = self._N(y, V, n)                 # yp is an (N_data, N) matrix
             print('After _N')
-            v = self.f(x, yp, F_value)            # v_n is a (N_data, N) matrix
+            v = self.f(x, yp, F_value)            # v is an (N_data, N) matrix
             print('shape v', v.shape)
             print('After function Value')
-            V = pt.cat((V, v[:,None,:]), dim=1)   # v_n size (N_data, n, N)
+            V = pt.cat((V, v[:,None,:]), dim=1)   # V is an (N_data, n, N) tensor
             print('shape V', V.shape)
             print(tracemalloc.get_traced_memory())
             tracemalloc.stop()
