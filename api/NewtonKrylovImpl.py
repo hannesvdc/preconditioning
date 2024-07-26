@@ -20,24 +20,13 @@ class NewtonKrylovLayer(nn.Module):
 
     def forward(self, x):
         y = pt.zeros_like(x)     # y stores the variable that solves f(xk, y) = 0 (i.e. the linear system)
-        print('Computing F value')
         F_value = self.F(x)      # A matrix with (N_data, N) components
-        print('constructing V')
         V = self.f(x, y, F_value)[:,None,:] # v_0 size (N_data, 1, N)
-        print('shape of V', V.shape)
 
         for n in range(1, self.inner_iterations): # do inner_iterations-1 function evaluations
-            tracemalloc.start()
-            print('\nInner iteration ', n)
             yp = self._N(y, V, n)                 # yp is an (N_data, N) matrix
-            print('After _N')
             v = self.f(x, yp, F_value)            # v is an (N_data, N) matrix
-            print('shape v', v.shape)
-            print('After function Value')
             V = pt.cat((V, v[:,None,:]), dim=1)   # V is an (N_data, n, N) tensor
-            print('shape V', V.shape)
-            print(tracemalloc.get_traced_memory())
-            tracemalloc.stop()
 
         yp = self._N(y, V, self.inner_iterations)
         return x + yp # y = x_{k+1} - x_k
@@ -45,7 +34,6 @@ class NewtonKrylovLayer(nn.Module):
     def _N(self, y, V, n):
         lower_index = ( (n-1) * n ) // 2
         upper_index = ( n * (n+1) ) // 2
-        print('weights', self.weights)
         return y + pt.tensordot(V, self.weights[lower_index:upper_index], dims=([1],[0]))
     
 class NewtonKrylovNetwork(nn.Module):
@@ -80,7 +68,6 @@ class NewtonKrylovLoss(nn.Module):
         N_data = x.shape[0]
 
         for k in range(self.outer_iterations):
-            print('outer iteration', k)
             x = self.network.forward(x)
 
             loss_weight = self.base_weight**(k+1)
