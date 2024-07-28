@@ -10,7 +10,7 @@ from ChemicalRoutines import psi_ef_lbm, ChemicalDataset
 
 # Just some sanity pytorch settings
 pt.set_grad_enabled(True)
-pt.set_default_dtype(pt.float64)
+pt.set_default_dtype(pt.float32)
 
 # Create function to solve
 dT_min = 0.0
@@ -23,10 +23,9 @@ psi = lambda x: psi_ef_lbm(x, T_psi, n_micro, dT_min, dT_max, tolerance)
 # Load the data in memory
 print('Generating Training Data.')
 M = 50
-batch_size = 64
-dataset = ChemicalDataset(M=M)
+batch_size = 8
+dataset = ChemicalDataset(M=M, device='cpu', dtype=pt.get_default_dtype())
 train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
-print(dataset.data.shape)
 
 # Initialize the Network and the Optimizer (Adam)
 print('\nSetting Up the Newton-Krylov Neural Network.')

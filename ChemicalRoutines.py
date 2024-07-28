@@ -3,12 +3,14 @@ from torch.utils.data import Dataset
 
 import numpy as np
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 # The data impleementation and loader class
 class ChemicalDataset(Dataset):
-    def __init__(self, M, device='cpu'):
+    def __init__(self, M, device='cpu', dtype=pt.float64):
         super().__init__()
         self.device = device
-        self.dtype = pt.float32 if self.device == 'mps' else pt.float64
+        self.dtype = dtype
 
         self.seed = 100
         self.scale = 0.1
@@ -214,6 +216,17 @@ def _equation_free_LBM_(x, T_psi, n_micro, dT_min, dT_max, tolerance):
     x = pt.hstack((y[0, 0:M] + y[0, M:2*M] + y[0, 2*M:3*M], y[0, 3*M:4*M] + y[0, 4*M:5*M] + y[0, 5*M:]))
     return x
 def equation_free_LBM(x, T_psi, n_micro, dT_min, dT_max, tolerance, axis=0): # Vectorized version of EqF-LBM.
-    print(len(pt.unbind(x, dim=axis)))
     return pt.stack([_equation_free_LBM_(x_i, T_psi, n_micro, dT_min, dT_max, tolerance) for x_i in pt.unbind(x, dim=axis) ], dim=axis)
 psi_ef_lbm = lambda x, T_psi, n_micro, dT_min, dT_max, tolerance: equation_free_LBM(x, T_psi, n_micro, dT_min, dT_max, tolerance) - x
+
+def equation_free_LBM_parallel(x, T_psi, n_micro, dT_min, dT_max, tolerance, axis=0):
+    results = []
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        futures = [executor.submit(_equation_free_LBM_, x_i, T_psi, n_micro, dT_min, dT_max, tolerance) for x_i in pt.unbind(x, dim=axis)]
+        for future in as_completed(futures):
+            results.append(future.result())
+    
+    # Stack the resulting vectors into a matrix
+    result_matrix = pt.stack(results, dim=axis)
+    return result_matrix
+psi_ef_lbm_parallel = lambda x, T_psi, n_micro, dT_min, dT_max, tolerance: equation_free_LBM_parallel(x, T_psi, n_micro, dT_min, dT_max, tolerance) - x

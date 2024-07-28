@@ -4,7 +4,7 @@ from collections import OrderedDict
 import tracemalloc
 
 class NewtonKrylovLayer(nn.Module):
-    """ Custom Newton-Krylov layer to solve Jf(xk) y = -f(xk) """
+    """ Custom Newton-Krylov layer to solve JF(xk) y = -F(xk) """
     def __init__(self, F, inner_iterations):
         super(NewtonKrylovLayer, self).__init__()
 
@@ -39,11 +39,9 @@ class NewtonKrylovLayer(nn.Module):
 class NewtonKrylovNetwork(nn.Module):
     def __init__(self, F, inner_iterations):
         super(NewtonKrylovNetwork, self).__init__()
-
-        self.F = F
-        self.inner_layer = NewtonKrylovLayer(F, inner_iterations)
         
         # This network is just one inner layer
+        self.inner_layer = NewtonKrylovLayer(F, inner_iterations)
         layer_list = [('layer_0', self.inner_layer)]
         self.layers = pt.nn.Sequential(OrderedDict(layer_list))
 
@@ -58,8 +56,8 @@ class NewtonKrylovLoss(nn.Module):
     def __init__(self, network, F, outer_iterations, base_weight=4.0):
         super(NewtonKrylovLoss, self).__init__()
         
-        self.network = network
         self.F = F
+        self.network = network
         self.outer_iterations = outer_iterations
         self.base_weight = base_weight
 
