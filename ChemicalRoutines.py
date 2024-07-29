@@ -170,9 +170,7 @@ def equation_free_LBM_tensor(x, T_psi, n_micro, dT):
     N = int(T_psi / (n_micro * dt + dT))
 	
     U, V = x[:, 0:M], x[:, M:]
-    for n in range(N):
-        print('t =', n*(n_micro * dt + dT))
-
+    for _ in range(N):
         # Lift the current macroscopic state x = (U, V) 
         f_1_U, f0_U, f1_U = weights[0] * U, weights[1] * U, weights[2] * U
         f_1_V, f0_V, f1_V = weights[0] * V, weights[1] * V, weights[2] * V

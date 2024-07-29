@@ -6,24 +6,22 @@ from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 
 from api.NewtonKrylovImpl import *
-from ChemicalRoutines import psi_ef_lbm, ChemicalDataset
+from ChemicalRoutines import psi_eqfree_tensor, ChemicalDataset
 
 # Just some sanity pytorch settings
 pt.set_grad_enabled(True)
-pt.set_default_dtype(pt.float32)
+pt.set_default_dtype(pt.float64)
 
 # Create function to solve
-dT_min = 0.0
-dT_max = 0.1
-tolerance = 1.e-3
 n_micro = 1000
+dT = 0.1
 T_psi = 0.5
-psi = lambda x: psi_ef_lbm(x, T_psi, n_micro, dT_min, dT_max, tolerance)
+psi = lambda x: psi_eqfree_tensor(x, T_psi, n_micro, dT)
 
 # Load the data in memory
 print('Generating Training Data.')
 M = 50
-batch_size = 8
+batch_size = 64
 dataset = ChemicalDataset(M=M, device='cpu', dtype=pt.get_default_dtype())
 train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
