@@ -15,14 +15,15 @@ class ChemicalDataset(Dataset):
         self.seed = 100
         self.scale = 0.1
         self.rng = np.random.RandomState(seed=self.seed)
+
+        self.directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK_LBM/'
+        self.filename = 'Steady_State_LBM_dt=1e-4.npy'
         
         self.N_data = 1024
         self.M = M
         self.subsample = 200 // self.M
         self.data_size = 2 * self.M
-        directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK_LBM/'
-        filename = 'Steady_State_LBM_dt=1e-4.npy'
-        x0 = np.load(directory + filename).flatten()[::self.subsample]
+        x0 = np.load(self.directory + self.filename).flatten()[::self.subsample]
         self.data = pt.from_numpy(x0[None,:] + self.rng.normal(0.0, self.scale, size=(self.N_data, self.data_size))).to(device=self.device, dtype=self.dtype)
 
     def __len__(self):
@@ -37,14 +38,15 @@ class ChemicalLBMDataset(Dataset):
         self.seed = 100
         self.scale = 0.1
         self.rng = np.random.RandomState(seed=self.seed)
+
+        self.directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK_LBM/'
+        self.filename = 'Steady_State_LBM_dt=1e-4.npy'
         
         self.N_data = 1024
         self.M = M
         self.subsample = 200 // self.M
         self.data_size = 6 * self.M
-        directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK_LBM/'
-        filename = 'Steady_State_LBM_dt=1e-4.npy'
-        x0 = np.load(directory + filename).flatten()[::self.subsample]
+        x0 = np.load(self.directory + self.filename).flatten()[::self.subsample]
         UV_data = pt.from_numpy(x0[None,:] + self.rng.normal(0.0, self.scale, size=(self.N_data, 2*self.M)))
 
         U = UV_data[:,0:M]
