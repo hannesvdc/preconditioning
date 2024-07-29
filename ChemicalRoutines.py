@@ -170,7 +170,6 @@ def equation_free_LBM_tensor(x, T_psi, n_micro, dT):
     M = x.shape[1] // 2
     N = int(T_psi / (n_micro * dt + dT))
 	
-    t = 0.0 # The current simulation time
     U, V = x[:, 0:M], x[:, M:]
     for n in range(N):
         print('t =', n*(n_micro * dt + dT))
@@ -191,12 +190,8 @@ def equation_free_LBM_tensor(x, T_psi, n_micro, dT):
         dVdt = (Vq - Vp) / dt
 
 		# Extrapolation
-        U_new = Uq + dT * dUdt
-        V_new = Vq + dT * dVdt
-
-        # State updating for the next iteration
-        U = pt.clone(U_new)
-        V = pt.clone(V_new)
+        U = Uq + dT * dUdt
+        V = Vq + dT * dVdt
 
 	# Patch up the simulation to reach T_psi
     t = N * (n_micro * dt + dT)
@@ -204,6 +199,5 @@ def equation_free_LBM_tensor(x, T_psi, n_micro, dT):
     f_1_V, f0_V, f1_V = weights[0] * V, weights[1] * V, weights[2] * V
     y = pt.hstack((f_1_U, f0_U, f1_U, f_1_V, f0_V, f1_V))
     y = LBM(y, T_psi - t)
-    x = pt.hstack((y[:, 0:M] + y[:, M:2*M] + y[:, 2*M:3*M], y[:, 3*M:4*M] + y[:, 4*M:5*M] + y[:, 5*M:]))
-    return x
+    return pt.hstack((y[:, 0:M] + y[:, M:2*M] + y[:, 2*M:3*M], y[:, 3*M:4*M] + y[:, 4*M:5*M] + y[:, 5*M:]))
 psi_eqfree_tensor = lambda x, T_psi, n_micro, dT: equation_free_LBM_tensor(x, T_psi, n_micro, dT) - x

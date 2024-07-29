@@ -37,7 +37,7 @@ V = pt.from_numpy(V_ss + eps * rng.normal(0.0, 1.0, size=(N_data, M)))
 x = pt.hstack((U, V))
 x = cr.equation_free_LBM_tensor(x, Tf, n_micro, dT_max)
 U, V = x[0,0:M], x[0,M:]
-print('Psi EqF-LBM', pt.norm(cr.psi_eqfree_tensor(x, 0.5, n_micro, dT_max)) / N_data)
+print('Psi EqF-LBM', pt.norm(cr.psi_eqfree_tensor(x, 0.5, n_micro, dT_max)) / N_data) # yields 0.0022
 
 # Plot found solution
 plt.plot(x_array, U.numpy(), label=r'$U(x)$ Equation-Free')
