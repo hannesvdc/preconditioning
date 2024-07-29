@@ -20,7 +20,7 @@ psi = lambda x: psi_eqfree_tensor(x, T_psi, n_micro, dT)
 
 # Load the data in memory
 print('Generating Training Data.')
-M = 50
+M = 200
 batch_size = 64
 dataset = ChemicalDataset(M=M, device='cpu', dtype=pt.get_default_dtype())
 train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
