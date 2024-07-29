@@ -52,7 +52,6 @@ class ChemicalLBMDataset(Dataset):
         U = UV_data[:,0:M]
         V = UV_data[:,M:]
         self.data = pt.hstack((weights[0] * U, weights[1] * U, weights[2] * U, weights[0] * V, weights[1] * V, weights[2] * V))
-        print(self.data.shape)
 
     def __len__(self):
         return self.N_data
