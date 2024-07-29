@@ -140,10 +140,8 @@ def _LatticeBM_Schnakenberg(f_1_U, f0_U, f1_U, f_1_V, f0_V, f1_V, relaxation_tim
     return f_1_U, f0_U, f1_U, f_1_V, f0_V, f1_V
 
 # Implements D1Q3 Lattice-Boltzmann
-# x is an (N_data, 6M) vector
 def LBM(x, T):
-	# Lattice Parameters
-    M = x.shape[1] // 6
+    M = x.shape[1] // 6 # x is an (N_data, 6M) vector
     dx = 1.0 / M
     N = int(T / dt)
     relaxation_times = pt.tensor([2.0/(1.0 + 2.0/cs_quad*d1*dt/dx**2), 2.0/(1.0 + 2.0/cs_quad*d2*dt/dx**2)])
@@ -166,6 +164,7 @@ def LBM(x, T):
     return pt.hstack((f_1_U, f0_U, f1_U, f_1_V, f0_V, f1_V)) # equivalent of np.hstack
 psi_lbm = lambda x, T_psi: LBM(x, T_psi) - x # One-liner
 
+# Implements Equation-Free Lattice Boltzmann with fixed extapolation step size
 def equation_free_LBM_tensor(x, T_psi, n_micro, dT):
     M = x.shape[1] // 2
     N = int(T_psi / (n_micro * dt + dT))
