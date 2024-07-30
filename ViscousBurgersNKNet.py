@@ -72,7 +72,7 @@ def solvePDE(plot=True):
         plt.legend()
         plt.show()
     else:
-        return v_nt
+        return v_pde
 
 
 # General setup routine shared by all training routines
@@ -99,7 +99,7 @@ def setupRecNet(outer_iterations=3, inner_iterations=4, baseweight=4.0):
 
     return net, loss_fn, d_loss_fn, F
 
-def sampleWeights(net, **kwargs):
+def sampleWeights(net):
     inner_iterations = net.inner_iterations
     n_weights = (inner_iterations * (inner_iterations + 1) ) // 2
     return np.zeros(n_weights)
@@ -107,7 +107,7 @@ def sampleWeights(net, **kwargs):
 # Only used to train Newton-Krylov network with 10 inner iterations
 def trainNKNetAdam():
     net, loss_fn, d_loss_fn, _ = setupRecNet(outer_iterations=3, inner_iterations=4)
-    weights = sampleWeights(net, loss_fn=loss_fn, threshold=1.e10)
+    weights = sampleWeights(net)
     print('Initial Loss', loss_fn(weights))
     print('Initial Loss Derivative', lg.norm(d_loss_fn(weights)))
 
@@ -196,7 +196,7 @@ def testNKNet(weights=None):
     plt.legend()
     plt.title('Viscous-Burgers Equation')
     plt.xlabel(r'$x$')
-    plt.ylabel(r'$u(x)$')
+    plt.ylabel(r'$u(x)$', rotation=0)
     plt.show()
 
 if __name__ == '__main__':
