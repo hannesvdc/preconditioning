@@ -39,7 +39,7 @@ def pde_rhs(u):
     diff = 0.5 * D * (v_right - 2.0*v + v_left) / dx**2
     return (-flux + diff)[1:N]
 
-def solvePDE():
+def solvePDE(plot=True):
     f = lambda u: 0.5 * np.square(u)
     rng = rd.RandomState()
     m = np.linspace(left_bc, right_bc, N+1)
@@ -64,12 +64,15 @@ def solvePDE():
     # Plot the steady state
     v_pde = np.hstack([left_bc, u, right_bc])
     v_nt = np.hstack([left_bc, u_ss, right_bc])
-    x_axis = np.arange(v_pde.size) / N
-    plt.plot(x_axis, v_pde, label='Steady-State by Timestepping')
-    plt.plot(x_axis, v_nt, label='Steady-State by Root Finding')
-    plt.xlabel(r'$x$')
-    plt.legend()
-    plt.show()
+    if plot:
+        x_axis = np.arange(v_pde.size) / N
+        plt.plot(x_axis, v_pde, label='Steady-State by Timestepping')
+        plt.plot(x_axis, v_nt, label='Steady-State by Root Finding')
+        plt.xlabel(r'$x$')
+        plt.legend()
+        plt.show()
+    else:
+        return v_nt
 
 
 # General setup routine shared by all training routines
@@ -182,6 +185,18 @@ def testNKNet(weights=None):
     plt.ylim((0.1*min(np.min(avg_errors), np.min(avg_nk_errors)),70))
     plt.title(r'Function Value $|F(x_k)|$')
     plt.legend()
+    plt.show()
+
+    # Show the found steady-state solution versus the exact solution to the PDE
+    v_pde = solvePDE(plot=False)
+    nknet = np.hstack([left_bc, samples[:,10,0], right_bc])
+    x_array = np.arange(v_pde.size) / N
+    plt.plot(x_array, v_pde, label='Exact Solution')
+    plt.plot(x_array, nknet, label='Newton-Krylov Net Solution')
+    plt.legend()
+    plt.title('Viscous-Burgers Equation')
+    plt.xlabel(r'$x$')
+    plt.ylabel(r'$u(x)$')
     plt.show()
 
 if __name__ == '__main__':
