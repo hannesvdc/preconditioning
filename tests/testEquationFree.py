@@ -13,10 +13,8 @@ pt.set_default_dtype(pt.float64)
 
 # Method parameters
 M = 200
-dt = 1.e-4 # microscopic LBM time step size
 n_micro = 1000
-dT_min = 0.0
-dT_max = 1.e-1
+dT = 1.e-1
 Tf = 100.0
 tolerance = 1.e-3
 
@@ -34,9 +32,9 @@ V = pt.from_numpy(V_ss + eps * rng.normal(0.0, 1.0, size=(N_data, M)))
 
 # Run Equation-Free Lattice-Boltzmann
 x = pt.hstack((U, V))
-x = cr.equation_free_LBM_tensor(x, Tf, n_micro, dT_max)
+x = cr.equation_free_LBM_tensor(x, Tf, n_micro, dT)
 U, V = x[0,0:M], x[0,M:]
-print('Psi EqF-LBM', pt.norm(cr.psi_eqfree_tensor(x, 0.5, n_micro, dT_max)) / N_data) # yields 0.0022
+print('Psi EqF-LBM', pt.norm(cr.psi_eqfree_tensor(x, 0.5, n_micro, dT)) / N_data) # yields 0.0022
 
 # Plot found solution
 x_array = np.linspace(0.0, 1.0, M)
