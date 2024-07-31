@@ -8,3 +8,5 @@
 .settings
 **/a.out
 **/*.npy
+**/data/*
+**/*.sh
