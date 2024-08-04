@@ -1,7 +1,6 @@
 import torch as pt
 import torch.nn as nn
 from collections import OrderedDict
-import tracemalloc
 
 class NewtonKrylovLayer(nn.Module):
     """ Custom Newton-Krylov layer to solve JF(xk) y = -F(xk) """

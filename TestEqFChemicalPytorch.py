@@ -5,20 +5,23 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 from api.NewtonKrylovImpl import *
-from ChemicalRoutines import psi_lbm, ChemicalLBMDataset
+from ChemicalRoutines import psi_eqfree_tensor, ChemicalDataset
 
 # Just some sanity pytorch settings
 pt.set_grad_enabled(False)
 pt.set_default_dtype(pt.float64)
 
 # Global variables to be shared by all testing routines
-T_psi = 0.05
-psi = lambda x: psi_lbm(x, T_psi)
+# Create function to solve
+n_micro = 1000
+dT = 0.1
+T_psi = 0.5
+psi = lambda x: psi_eqfree_tensor(x, T_psi, n_micro, dT)
 
 def plotTrainingResult():
     # Load the stored steady state and perturb it
-    M = 50
-    dataset = ChemicalLBMDataset(M=M)
+    M = 200
+    dataset = ChemicalDataset(M=M)
     x = pt.clone(dataset.data)
 
     # Load the network state
@@ -26,7 +29,7 @@ def plotTrainingResult():
     inner_iterations = 4
     outer_iterations = 10
     network = NewtonKrylovNetwork(psi, inner_iterations)
-    network.load_state_dict(pt.load(store_directory + 'model_lbm_chemical_M='+str(M)+'_inner='+str(inner_iterations)+'.pth'))
+    network.load_state_dict(pt.load(store_directory + 'model_eqflbm_chemical_M='+str(M)+'_inner='+str(inner_iterations)+'.pth'))
 
     # Load the exact steady state
     ss_directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK_LBM/'
@@ -43,15 +46,14 @@ def plotTrainingResult():
 
     # Find the index with minimal error
     index = pt.argmin(errors[:, outer_iterations])
-    U = x[index, 0:M] + x[index, M:2*M] + x[index, 2*M:3*M]
-    V = x[index, 3*M:4*M] + x[index, 4*M:5*M] + x[index, 5*M:]
+    U, V = x[index, 0:M], x[index,M:]
     x_array = np.linspace(0.0, 1.0, M)
     plt.plot(x_array, U_ss, label=r'Steady State $U(x)$', color='green')
     plt.plot(x_array, V_ss, label=r'Steady State $V(x)$', color='orange')
     plt.plot(x_array, U.detach().numpy(), label=r'Newton-Krylov NN $U(x)$', color='red')
     plt.plot(x_array, V.detach().numpy(), label=r'Newton-Krylov NN $V(x)$', color='blue')
     plt.xlabel(r'$x$')
-    plt.title(r'Newton-Krylov LBM Steady-State')
+    plt.title(r'Newton-Krylov Equation-Free Steady-State')
     plt.legend()
 
     # Average the erros and show convergence
