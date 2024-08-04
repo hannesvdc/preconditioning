@@ -25,6 +25,7 @@ class ChemicalDataset(Dataset):
         self.data_size = 2 * self.M
         x0 = np.load(self.directory + self.filename).flatten()[::self.subsample]
         self.data = pt.from_numpy(x0 + self.scale * self.rng.normal(0.0, 1.0, size=(self.N_data, self.data_size)))
+        self.data.requires_grad = False
 
     def __len__(self):
         return self.N_data
