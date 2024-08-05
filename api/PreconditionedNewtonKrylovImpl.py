@@ -19,22 +19,21 @@ class InverseJacobianLayer(nn.Module):
     # Input is a tuple containing the nonlinear iterate xk and the right-hand side rhs, 
     # both tensors of shape (N_data, N).
     def forward(self, data):
-        # Load the data components
         xk  = data[0]
         rhs = data[1]
         F_value = self.F(xk)
 
-        # Our initial guess for w is zeros
-        w = pt.zeros_like(xk)                     # w is the solution to J_PDE(xk) w = rhs
-        V = self.f(w, rhs, xk, F_value)[:,None,:] # v_0 size (N_data, 1, N)
+        # Our initial guess for J_PDE(xk) w = rhs is zeros
+        w = pt.zeros_like(xk)
+        V = self.f(w, rhs, xk, F_value)[:,None,:] # Krylov vectors with shape (N_data, 1, N)
 
         # do inner_iterations-1 function evaluations
         for n in range(1, self.inner_iterations):
-            wp = self._N(w, V, n)                 # yp is an (N_data, N) matrix
-            v = self.f(wp, rhs, xk, F_value)      # Krylov vectors v is an (N_data, N) matrix
-            V = pt.cat((V, v[:,None,:]), dim=1)   # V is an (N_data, n, N) tensor
+            wp = self._N(w, V, n)                 # Shape (N_data, N)
+            v = self.f(wp, rhs, xk, F_value)
+            V = pt.cat((V, v[:,None,:]), dim=1)   # rylov vectors with shape (N_data, 1, N)
 
-        # Aggregate all the Krylov vectors and return
+        # Linearly combine the Krylov vectors and return the result
         wp = self._N(w, V, self.inner_iterations)
         return wp # wp = J_F^{-1} * rhs
     
