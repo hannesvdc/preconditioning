@@ -16,15 +16,19 @@ class InverseJacobianLayer(nn.Module):
         weights = pt.zeros(self.n_weights)
         self.weights = nn.Parameter(weights)  # nn.Parameter is a Tensor that's a module parameter.
 
+    # Input is a tuple containing the nonlinear iterate xk and the right-hand side rhs, 
+    # both tensors of shape (N_data, N).
     def forward(self, data):
+        # Load the data components
         xk  = data[0]
         rhs = data[1]
         F_value = self.F(xk)
 
-        w = pt.zeros_like(xk)                       # w is the solution to J_PDE(xk) w = rhs
-        V = self.f(w, rhs, xk, F_value)[:,None,:]    # v_0 size (N_data, 1, N)
+        w = pt.zeros_like(xk)                     # w is the solution to J_PDE(xk) w = rhs
+        V = self.f(w, rhs, xk, F_value)[:,None,:] # v_0 size (N_data, 1, N)
 
-        for n in range(1, self.inner_iterations): # do inner_iterations-1 function evaluations
+        # do inner_iterations-1 function evaluations
+        for n in range(1, self.inner_iterations):
             wp = self._N(w, V, n)                 # yp is an (N_data, N) matrix
             v = self.f(wp, rhs, xk, F_value)      # Krylov vectors v is an (N_data, N) matrix
             V = pt.cat((V, v[:,None,:]), dim=1)   # V is an (N_data, n, N) tensor
