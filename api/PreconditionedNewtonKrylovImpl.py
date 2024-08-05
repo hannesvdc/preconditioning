@@ -24,6 +24,7 @@ class InverseJacobianLayer(nn.Module):
         rhs = data[1]
         F_value = self.F(xk)
 
+        # Our initial guess for w is zeros
         w = pt.zeros_like(xk)                     # w is the solution to J_PDE(xk) w = rhs
         V = self.f(w, rhs, xk, F_value)[:,None,:] # v_0 size (N_data, 1, N)
 
@@ -33,6 +34,7 @@ class InverseJacobianLayer(nn.Module):
             v = self.f(wp, rhs, xk, F_value)      # Krylov vectors v is an (N_data, N) matrix
             V = pt.cat((V, v[:,None,:]), dim=1)   # V is an (N_data, n, N) tensor
 
+        # Aggregate all the Krylov vectors and return
         wp = self._N(w, V, self.inner_iterations)
         return wp # wp = J_F^{-1} * rhs
     

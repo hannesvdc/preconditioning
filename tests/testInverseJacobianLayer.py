@@ -51,9 +51,11 @@ class InverseJacobianLoss(nn.Module):
         rhs = data[1]
         F_value = self.F(xk)
 
+        # Propagate the data and compute loss
         w = self.network.forward(data)
         loss = pt.sum(pt.square(self.f(w, rhs, xk, F_value))) # Sum over all data points (dim=0) and over all components (dim=1)
 
+        # Average the loss and return
         N_data = rhs.shape[0]
         avg_loss = loss / N_data
         return avg_loss
@@ -90,7 +92,7 @@ train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
 # Initialize the Network and the Optimizer (Adam)
 print('\nSetting Up the Newton-Krylov Neural Network.')
-inner_iterations = 8
+inner_iterations = 20
 network = InverseJacobianNetwork(inner_iterations)
 loss_fn = InverseJacobianLoss(network)
 optimizer = optim.Adam(network.parameters(), lr=0.001)
