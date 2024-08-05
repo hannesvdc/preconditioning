@@ -75,13 +75,13 @@ class RHSDataset(Dataset):
 
         # Load the xk dataset
         self.xk_dataset = cr.ChemicalDataset(self.M)
-        self.xk = self.xk_dataset.data
+        self.xk_data = self.xk_dataset.data
 
     def __len__(self):
         return self.N_data
 	
     def __getitem__(self, idx):
-        return (self.xk[idx, :], self.rhs_data[idx, :])
+        return (self.xk_data[idx, :], self.rhs_data[idx, :])
     
 # Load the data in memory
 print('Generating Training Data.')
@@ -92,7 +92,7 @@ train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
 # Initialize the Network and the Optimizer (Adam)
 print('\nSetting Up the Newton-Krylov Neural Network.')
-inner_iterations = 20
+inner_iterations = 10
 network = InverseJacobianNetwork(inner_iterations)
 loss_fn = InverseJacobianLoss(network)
 optimizer = optim.Adam(network.parameters(), lr=0.001)
