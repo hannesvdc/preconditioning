@@ -37,13 +37,11 @@ class InverseJacobianNetwork(nn.Module):
         return self.layers(input)
     
 class InverseJacobianLoss(nn.Module):
-    def __init__(self, network):
+    def __init__(self, network: InverseJacobianNetwork):
         super(InverseJacobianLoss, self).__init__()
-        
-        self.eps = 1.e-8
-        self.F = network.F
-        self.f = lambda xk, w, rhs: (self.F(xk + self.eps*w) - self.F(xk)) / self.eps - rhs
         self.network = network
+        self.F = self.network.inner_layer.F
+        self.f = self.network.inner_layer.f
 
     # Input is a tuple containing the nonlinear iterate xk and the right-hand side rhs, 
     # both tensors of shape (N_data, N).
@@ -51,9 +49,10 @@ class InverseJacobianLoss(nn.Module):
         # Load the data components
         xk  = data[0]
         rhs = data[1]
+        F_value = self.F(xk)
 
         w = self.network.forward(data)
-        loss = pt.sum(pt.square(self.f(xk, w, rhs))) # Sum over all data points (dim=0) and over all components (dim=1)
+        loss = pt.sum(pt.square(self.f(w, rhs, xk, F_value))) # Sum over all data points (dim=0) and over all components (dim=1)
 
         N_data = rhs.shape[0]
         avg_loss = loss / N_data
@@ -82,7 +81,7 @@ class RHSDataset(Dataset):
     def __getitem__(self, idx):
         return (self.xk[idx, :], self.rhs_data[idx, :])
     
-    # Load the data in memory
+# Load the data in memory
 print('Generating Training Data.')
 M = 200
 batch_size = 64
