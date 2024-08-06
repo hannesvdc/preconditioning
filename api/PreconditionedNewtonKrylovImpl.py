@@ -1,5 +1,6 @@
 import torch as pt
 import torch.nn as nn
+from collections import OrderedDict
 
 class InverseJacobianLayer(nn.Module):
     """ Custom Layer that computes J^{-1} rhs using a Krylov Neural-Network """
@@ -40,3 +41,19 @@ class InverseJacobianLayer(nn.Module):
         lower_index = ( (n-1) * n ) // 2
         upper_index = ( n * (n+1) ) // 2
         return w + pt.tensordot(V, self.weights[lower_index:upper_index], dims=([1],[0]))
+    
+class InverseJacobianNetwork(nn.Module):
+    """ Custom Neural Network that computes J^{-1} rhs using an 
+        InverseJacobianLayer. """
+    def __init__(self, F_macro, inner_iterations):
+        super(InverseJacobianNetwork, self).__init__()
+
+        self.inv_jac_layer = InverseJacobianLayer(F_macro, inner_iterations)
+        layer_list = [('layer_0', self.inv_jac_layer)]
+        self.layers = nn.Sequential(OrderedDict(layer_list))
+
+        # Check the number of preconditioning parameters
+        print('Number of Preconditioning Parameters:', sum(p.numel() for p in self.parameters()))
+
+    def forward(self, x):
+        return self.layers(x)
