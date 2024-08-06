@@ -18,13 +18,12 @@ class InverseJacobianLayer(nn.Module):
 
     # Input is a tuple containing the nonlinear iterate xk and the right-hand side rhs, 
     # both tensors of shape (N_data, N).
-    def forward(self, data):
-        xk  = data[0]
-        rhs = data[1]
-        F_value = self.F(xk)
+    def forward(self, x):
+        xk  = x[0]
+        rhs = x[1]
+        w   = x[2]
 
-        # Our initial guess for J_PDE(xk) w = rhs is zeros
-        w = pt.zeros_like(xk)
+        F_value = self.F(xk)
         V = self.f(w, rhs, xk, F_value)[:,None,:] # Krylov vectors with shape (N_data, 1, N)
 
         # do inner_iterations-1 function evaluations
