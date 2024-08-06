@@ -95,3 +95,24 @@ class PreconditionedNewtonKrylovLayer(nn.Module):
         lower_index = ( (n-1) * n ) // 2
         upper_index = ( n * (n+1) ) // 2
         return y + pt.tensordot(V, self.weights[lower_index:upper_index], dims=([1],[0]))
+
+class PreconditionedNewtonKrylovNetwork(nn.Module):
+    def __init__(self, F, F_macro, inner_iterations : tuple[int, int]):
+        super(PreconditionedNewtonKrylovNetwork, self).__init__()
+        
+        # Setup the InverseJacobianNetwork and the inner layer
+        self.inv_jac_network = InverseJacobianNetwork(F_macro, inner_iterations[1])
+        self.inner_layer = PreconditionedNewtonKrylovLayer(F, inner_iterations[0], self.inv_jac_network)
+
+        # Include layer parameters as trainable parameters
+        self.params = []
+        self.params.extend(self.layers.parameters())
+        self.params.extend(self.inv_jac_network.parameters())
+
+        # Check the total number of parameters
+        print('Total Number of Preconditioned Newton-Krylov Parameters:', sum(p.numel() for p in self.parameters()))
+
+    # Input: Nonlinear iterate xk after k outer iterations
+    def forward(self, xk):
+        return self.inner_layer(xk)
+
