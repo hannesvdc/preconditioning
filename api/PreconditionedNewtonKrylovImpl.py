@@ -42,25 +42,9 @@ class InverseJacobianLayer(nn.Module):
         upper_index = ( n * (n+1) ) // 2
         return w + pt.tensordot(V, self.weights[lower_index:upper_index], dims=([1],[0]))
     
-class InverseJacobianNetwork(nn.Module):
-    """ Custom Neural Network that computes J^{-1} rhs using an 
-        InverseJacobianLayer. """
-    def __init__(self, F_macro, inner_iterations):
-        super(InverseJacobianNetwork, self).__init__()
-
-        self.inv_jac_layer = InverseJacobianLayer(F_macro, inner_iterations)
-        layer_list = [('layer_0', self.inv_jac_layer)]
-        self.layers = nn.Sequential(OrderedDict(layer_list))
-
-        # Check the number of preconditioning parameters
-        print('Number of Preconditioning Parameters:', sum(p.numel() for p in self.parameters()))
-
-    def forward(self, x):
-        return self.layers(x)
-    
 class PreconditionedNewtonKrylovLayer(nn.Module):
     """ Custom Preconditioned Newton-Krylov layer to solve M * (JF(xk) y = -F(xk)) """
-    def __init__(self, F, inner_iterations, inv_jac_network):
+    def __init__(self, F, inner_iterations, inv_jac_layer):
         super(PreconditionedNewtonKrylovLayer, self).__init__()
 
         self.eps = 1.e-8
@@ -73,19 +57,19 @@ class PreconditionedNewtonKrylovLayer(nn.Module):
         weights = pt.zeros(self.n_weights)
         self.weights = nn.Parameter(weights)  # nn.Parameter is a Tensor that's a module parameter.
 
-        self.inv_jac_network = inv_jac_network
+        self.inv_jac_layer = inv_jac_layer
 
     def forward(self, xk):
         y = pt.zeros_like(xk)     # y stores the variable that solves f(xk, y) = 0 (i.e. the linear system)
         F_value = self.F(xk)      # A matrix with (N_data, N) components
         v0 = self.f(xk, y, F_value) # v_0 size (N_data, 1, N)
-        Mv0 = self.inv_jac_network((xk, v0, pt.zeros_like(xk))) # Preconditioning
+        Mv0 = self.inv_jac_layer((xk, v0, pt.zeros_like(xk))) # Preconditioning
         V = Mv0[:,None,:]
         # TODO Merge this double code in one for-loop
         for n in range(1, self.inner_iterations): # do inner_iterations-1 function evaluations
             yp = self._N(y, V, n)                 # yp is an (N_data, N) matrix
             v  = self.f(xk, yp, F_value)           # v is an (N_data, N) matrix
-            Mv = self.inv_jac_network((xk, v, pt.zeros_like(xk))) # Preconditioning
+            Mv = self.inv_jac_layer((xk, v, pt.zeros_like(xk))) # Preconditioning
             V = pt.cat((V, Mv[:,None,:]), dim=1)   # V is an (N_data, n, N) tensor
 
         yp = self._N(y, V, self.inner_iterations)
@@ -101,13 +85,13 @@ class PreconditionedNewtonKrylovNetwork(nn.Module):
         super(PreconditionedNewtonKrylovNetwork, self).__init__()
         
         # Setup the InverseJacobianNetwork and the inner layer
-        self.inv_jac_network = InverseJacobianNetwork(F_macro, inner_iterations[1])
-        self.inner_layer = PreconditionedNewtonKrylovLayer(F, inner_iterations[0], self.inv_jac_network)
+        self.inv_jac_layer = InverseJacobianLayer(F_macro, inner_iterations[1])
+        self.inner_layer = PreconditionedNewtonKrylovLayer(F, inner_iterations[0], self.inv_jac_layer)
 
         # Include layer parameters as trainable parameters
         self.params = []
-        self.params.extend(self.layers.parameters())
-        self.params.extend(self.inv_jac_network.parameters())
+        self.params.extend(self.inv_jac_layer.parameters())
+        self.params.extend(self.inner_layer.parameters())
 
         # Check the total number of parameters
         print('Total Number of Preconditioned Newton-Krylov Parameters:', sum(p.numel() for p in self.parameters()))
