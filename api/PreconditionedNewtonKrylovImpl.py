@@ -116,3 +116,27 @@ class PreconditionedNewtonKrylovNetwork(nn.Module):
     def forward(self, xk):
         return self.inner_layer(xk)
 
+class PreconditionedNewtonKrylovLoss(nn.Module):
+    def __init__(self, network : PreconditionedNewtonKrylovNetwork, 
+                       F, 
+                       outer_iterations : int, 
+                       base_weight=4.0):
+        super(PreconditionedNewtonKrylovLoss, self).__init__()
+        
+        self.F = F
+        self.network = network
+        self.outer_iterations = outer_iterations
+        self.base_weight = base_weight
+
+    def forward(self, x):
+        loss = 0.0
+        N_data = x.shape[0]
+
+        for k in range(self.outer_iterations):
+            x = self.network.forward(x)
+
+            loss_weight = self.base_weight**(k+1)
+            loss += loss_weight * pt.sum(pt.square(self.F(x))) # Sum over all data points (dim=0) and over all components (dim=1)
+
+        avg_loss = loss / N_data
+        return avg_loss
