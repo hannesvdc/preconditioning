@@ -1,6 +1,5 @@
 import torch as pt
 import torch.nn as nn
-from collections import OrderedDict
 
 class InverseJacobianLayer(nn.Module):
     """ Custom Layer that computes J^{-1} rhs using a Krylov Neural-Network """

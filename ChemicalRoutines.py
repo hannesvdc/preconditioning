@@ -3,8 +3,6 @@ from torch.utils.data import Dataset
 
 import numpy as np
 
-from concurrent.futures import ThreadPoolExecutor, as_completed
-
 # The data impleementation and loader class
 class ChemicalDataset(Dataset):
     def __init__(self, M, device='cpu', dtype=pt.float64):
