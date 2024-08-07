@@ -44,7 +44,8 @@ train_counter = []
 store_directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/R2N2/NKNet/'
 def train(epoch):
     network.train()
-    for _, (data, _) in enumerate(train_loader):
+    for batch_id, (data, _) in enumerate(train_loader):
+        print('batch', batch_id)
         optimizer.zero_grad()
 
         # Compute Loss. NewtonKrylovLoss takes care of network forwards

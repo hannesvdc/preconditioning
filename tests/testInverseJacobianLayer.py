@@ -14,55 +14,22 @@ import ChemicalRoutines as cr
 from api.PreconditionedNewtonKrylovImpl import *
 
 pt.set_default_dtype(pt.float64)
-
-class InverseJacobianNetwork(nn.Module):
-    def __init__(self, inner_iterations):
-        super(InverseJacobianNetwork, self).__init__()
-        
-        # setup the network psi function
-        self.T_psi = 0.05
-        self.F = lambda x: cr.psi_pde(x, self.T_psi)
-
-        # This network is just one inner layer
-        self.inner_layer = InverseJacobianLayer(self.F, inner_iterations)
-        layer_list = [('layer_0', self.inner_layer)]
-        self.layers = pt.nn.Sequential(OrderedDict(layer_list))
-
-        # Check the number of parameters
-        print('Number of Newton-Krylov Parameters:', sum(p.numel() for p in self.parameters()))
-
-    # Input is a tuple containing the nonlinear iterate xk and the right-hand side rhs, 
-    # both tensors of shape (N_data, N).
-    def forward(self, input):
-        return self.layers(input)
     
 class InverseJacobianLoss(nn.Module):
-    def __init__(self, network: InverseJacobianNetwork, outer_iterations, base_weight=4.0):
+    def __init__(self, layer: InverseJacobianLayer):
         super(InverseJacobianLoss, self).__init__()
-        self.network = network
-        self.outer_iterations = outer_iterations
-        self.base_weight = base_weight
+        self.inner_layer = layer
 
-        self.F = self.network.inner_layer.F
-        self.f = self.network.inner_layer.f
+        self.F = self.inner_layer.F
+        self.f = self.inner_layer.f
 
-    # Input is a tuple containing the nonlinear iterate xk and the right-hand side rhs, 
-    # both tensors of shape (N_data, N).
     def forward(self, data):
-        # Load the data components
         xk  = data[0]
         rhs = data[1]
-        w = pt.zeros_like(xk)
-        F_value = self.F(xk)
+        self.inner_layer.computeFValue(xk)
 
-        # Propagate the data and compute loss
-        loss = 0.0
-        for k in range(self.outer_iterations):
-            loss_weight = self.base_weight ** k
-
-            input = (xk, rhs, w)
-            w = self.network.forward(input)
-            loss += loss_weight * pt.sum(pt.square(self.f(w, rhs, xk, F_value))) # Sum over all data points (dim=0) and over all components (dim=1)
+        w = self.inner_layer.forward(data)
+        loss = pt.sum(pt.square(self.f(w, rhs, xk)))
 
         # Average the loss and return
         N_data = rhs.shape[0]
