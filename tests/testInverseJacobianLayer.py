@@ -98,10 +98,9 @@ def trainInverseJacobianNetwork():
 
     # Initialize the Network and the Optimizer (Adam)
     print('\nSetting Up the Newton-Krylov Neural Network.')
-    inner_iterations = 25
-    outer_iterations = 1
+    inner_iterations = 10
     network = InverseJacobianLayer(F, inner_iterations)
-    loss_fn = InverseJacobianLoss(network, outer_iterations)
+    loss_fn = InverseJacobianLoss(network)
     optimizer = optim.Adam(network.parameters(), lr=0.001)
     scheduler = sch.StepLR(optimizer, step_size=1000, gamma=0.1)
 
