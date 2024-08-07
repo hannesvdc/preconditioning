@@ -14,6 +14,31 @@ import ChemicalRoutines as cr
 from api.PreconditionedNewtonKrylovImpl import *
 
 pt.set_default_dtype(pt.float64)
+
+T_psi = 0.05
+F = lambda x: cr.psi_pde(x, T_psi)
+
+# class InverseJacobianNetwork(nn.Module):
+#     def __init__(self, inner_iterations):
+#         super(InverseJacobianNetwork, self).__init__()
+        
+#         # setup the network psi function
+#         self.T_psi = 0.05
+#         self.F = lambda x: cr.psi_pde(x, self.T_psi)
+
+#         # This network is just one inner layer
+#         self.inner_layer = InverseJacobianLayer(self.F, inner_iterations)
+#         layer_list = [('layer_0', self.inner_layer)]
+#         self.layers = pt.nn.Sequential(OrderedDict(layer_list))
+
+#         # Check the number of parameters
+#         print('Number of Newton-Krylov Parameters:', sum(p.numel() for p in self.parameters()))
+
+#     # Input is a tuple containing the nonlinear iterate xk and the right-hand side rhs, 
+#     # both tensors of shape (N_data, N).
+#     def forward(self, input):
+#         self.inner_layer.computeFValue(input[0])
+#         return self.layers(input)
     
 class InverseJacobianLoss(nn.Module):
     def __init__(self, layer: InverseJacobianLayer):
@@ -75,7 +100,7 @@ def trainInverseJacobianNetwork():
     print('\nSetting Up the Newton-Krylov Neural Network.')
     inner_iterations = 25
     outer_iterations = 1
-    network = InverseJacobianNetwork(inner_iterations)
+    network = InverseJacobianLayer(F, inner_iterations)
     loss_fn = InverseJacobianLoss(network, outer_iterations)
     optimizer = optim.Adam(network.parameters(), lr=0.001)
     scheduler = sch.StepLR(optimizer, step_size=1000, gamma=0.1)
@@ -99,7 +124,7 @@ def trainInverseJacobianNetwork():
             optimizer.step()
 
         # Some housekeeping
-        print('Train Epoch: {} \tLoss: {:.6f} \tLoss Gradient: {:.6f}'.format(epoch, loss.item(), pt.norm(network.inner_layer.weights.grad)))
+        print('Train Epoch: {} \tLoss: {:.6f} \tLoss Gradient: {:.6f}'.format(epoch, loss.item(), pt.norm(network.weights.grad)))
         pt.save(network.state_dict(), store_directory + 'model_inverse_jacobian_inner='+str(inner_iterations)+'.pth')
         pt.save(optimizer.state_dict(), store_directory + 'optimizer_inverse_jacobian_inner='+str(inner_iterations)+'.pth')
         train_losses.append(loss.item())
@@ -137,11 +162,11 @@ def testInverseJacobianNetwork():
     print('\nSetting Up the Newton-Krylov Neural Network.')
     inner_iterations = 10
     outer_iterations = 10
-    network = InverseJacobianNetwork(inner_iterations)
+    network = InverseJacobianLayer(F, inner_iterations)
     store_directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/R2N2/NKNet/'
     network.load_state_dict(pt.load(store_directory + 'model_inverse_jacobian_inner='+str(inner_iterations)+'.pth'))
-    f = network.inner_layer.f
-    F_value = network.inner_layer.F(xk_data)
+    f = network.f
+    F_value = network.F(xk_data)
 
     # Propagate the data through the network
     w = pt.zeros_like(rhs_data)

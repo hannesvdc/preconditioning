@@ -6,9 +6,10 @@ class InverseJacobianLayer(nn.Module):
     def __init__(self, F_macro, inner_iterations):
         super(InverseJacobianLayer, self).__init__()
 
+        # Computes directional derivative via normed vectors
         self.eps = 1.e-8
         self.F = F_macro
-        self.dF_w = lambda w, xk: (self.F(xk + self.eps*w) - self.F_value) / self.eps
+        self.dF_w = lambda w, xk: pt.norm(w, dim=1, keepdim=True) * (self.F(xk + self.eps * w / pt.norm(w, dim=1, keepdim=True)) - self.F_value) / self.eps
         self.f = lambda w, rhs, xk: self.dF_w(w, xk) - rhs
 
         self.inner_iterations = inner_iterations
