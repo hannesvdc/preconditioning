@@ -17,28 +17,6 @@ pt.set_default_dtype(pt.float64)
 
 T_psi = 0.05
 F = lambda x: cr.psi_pde(x, T_psi)
-
-# class InverseJacobianNetwork(nn.Module):
-#     def __init__(self, inner_iterations):
-#         super(InverseJacobianNetwork, self).__init__()
-        
-#         # setup the network psi function
-#         self.T_psi = 0.05
-#         self.F = lambda x: cr.psi_pde(x, self.T_psi)
-
-#         # This network is just one inner layer
-#         self.inner_layer = InverseJacobianLayer(self.F, inner_iterations)
-#         layer_list = [('layer_0', self.inner_layer)]
-#         self.layers = pt.nn.Sequential(OrderedDict(layer_list))
-
-#         # Check the number of parameters
-#         print('Number of Newton-Krylov Parameters:', sum(p.numel() for p in self.parameters()))
-
-#     # Input is a tuple containing the nonlinear iterate xk and the right-hand side rhs, 
-#     # both tensors of shape (N_data, N).
-#     def forward(self, input):
-#         self.inner_layer.computeFValue(input[0])
-#         return self.layers(input)
     
 class InverseJacobianLoss(nn.Module):
     def __init__(self, layer: InverseJacobianLayer):
@@ -47,6 +25,8 @@ class InverseJacobianLoss(nn.Module):
 
         self.F = self.inner_layer.F
         self.f = self.inner_layer.f
+
+        print('Number of trainable parameters:', sum(p.numel() for p in self.parameters()))
 
     def forward(self, data):
         xk  = data[0]
@@ -97,7 +77,7 @@ def trainInverseJacobianNetwork():
     train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
     # Initialize the Network and the Optimizer (Adam)
-    print('\nSetting Up the Newton-Krylov Neural Network.')
+    print('\nSetting Up the Inverse Jacobian Neural Network.')
     inner_iterations = 10
     network = InverseJacobianLayer(F, inner_iterations)
     loss_fn = InverseJacobianLoss(network)

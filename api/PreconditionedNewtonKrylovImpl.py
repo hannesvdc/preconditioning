@@ -9,7 +9,6 @@ class InverseJacobianLayer(nn.Module):
         # Computes directional derivative via normed vectors
         self.eps = 1.e-8
         self.F = F_macro
-        self.dF_w = lambda w, xk: pt.norm(w, dim=1, keepdim=True) * (self.F(xk + self.eps * w / pt.norm(w, dim=1, keepdim=True)) - self.F_value) / self.eps
         self.f = lambda w, rhs, xk: self.dF_w(w, xk) - rhs
 
         self.inner_iterations = inner_iterations
@@ -17,25 +16,31 @@ class InverseJacobianLayer(nn.Module):
         weights = pt.zeros(self.n_weights)
         self.weights = nn.Parameter(weights)
 
+    def dF_w(self, w, xk):
+        norm_w = pt.norm(w, dim=1, keepdim=True)
+        return norm_w * (self.F(xk + self.eps * w / norm_w) - self.F_value) / self.eps
+
     def computeFValue(self, xk):
         self.F_value = self.F(xk)
+        #print('F-Value', self.F_value)
 
     def forward(self, x):
         xk  = x[0]
         rhs = x[1]
 
+        w = self.eps * pt.ones_like(xk)
         V = pt.empty((xk.shape[0], 0, xk.shape[1]))
         for n in range(self.inner_iterations):
-            wp = self._N(V, n)
+            wp = self._N(w, V, n)
             v = self.f(wp, rhs, xk)
             V = pt.cat((V, v[:,None,:]), dim=1)
 
-        return self._N(V, self.inner_iterations)
+        return self._N(w, V, self.inner_iterations)
     
-    def _N(self, V, n):
+    def _N(self, w, V, n):
         lower_index = ( (n-1) * n ) // 2
         upper_index = ( n * (n+1) ) // 2
-        return pt.tensordot(V, self.weights[lower_index:upper_index], dims=([1],[0]))
+        return w + pt.tensordot(V, self.weights[lower_index:upper_index], dims=([1],[0]))
     
 class PreconditionedNewtonKrylovLayer(nn.Module):
     """ Custom Preconditioned Newton-Krylov layer to solve M * (JF(xk) y = -F(xk)) """
