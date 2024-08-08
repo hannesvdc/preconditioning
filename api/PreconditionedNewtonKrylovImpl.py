@@ -18,7 +18,8 @@ class InverseJacobianLayer(nn.Module):
 
     def dF_w(self, w, xk):
         norm_w = pt.norm(w, dim=1, keepdim=True)
-        return norm_w * (self.F(xk + self.eps * w / norm_w) - self.F_value) / self.eps
+        normed_w = w / norm_w
+        return norm_w * (self.F(xk + self.eps * normed_w) - self.F_value) / self.eps
 
     def computeFValue(self, xk):
         self.F_value = self.F(xk)

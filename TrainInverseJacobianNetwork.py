@@ -67,14 +67,14 @@ def trainInverseJacobianNetwork():
 
     # Load the data in memory
     print('Generating Training Data.')
-    M = 200
+    M = 50
     batch_size = 64
     dataset = RHSDataset(M)
     train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
     # Initialize the Network and the Optimizer (Adam)
     print('\nSetting Up the Inverse Jacobian Neural Network.')
-    inner_iterations = 25
+    inner_iterations = 95
     network = InverseJacobianLayer(F, inner_iterations)
     loss_fn = InverseJacobianLoss(network)
     optimizer = optim.Adam(network.parameters(), lr=0.001)
