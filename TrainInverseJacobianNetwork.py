@@ -1,6 +1,3 @@
-import sys
-sys.path.append('../')
-
 import torch as pt
 import torch.nn as nn
 import torch.optim as optim
@@ -8,7 +5,6 @@ import torch.optim.lr_scheduler as sch
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
 import matplotlib.pyplot as plt
-from collections import OrderedDict
 
 import ChemicalRoutines as cr
 from api.PreconditionedNewtonKrylovImpl import *
@@ -78,7 +74,7 @@ def trainInverseJacobianNetwork():
 
     # Initialize the Network and the Optimizer (Adam)
     print('\nSetting Up the Inverse Jacobian Neural Network.')
-    inner_iterations = 10
+    inner_iterations = 4
     network = InverseJacobianLayer(F, inner_iterations)
     loss_fn = InverseJacobianLoss(network)
     optimizer = optim.Adam(network.parameters(), lr=0.001)

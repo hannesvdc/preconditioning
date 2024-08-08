@@ -22,7 +22,6 @@ class InverseJacobianLayer(nn.Module):
 
     def computeFValue(self, xk):
         self.F_value = self.F(xk)
-        #print('F-Value', self.F_value)
 
     def forward(self, x):
         xk  = x[0]
