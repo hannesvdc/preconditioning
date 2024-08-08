@@ -5,13 +5,16 @@ import numpy as np
 
 # The data impleementation and loader class
 class ChemicalDataset(Dataset):
-    def __init__(self, M, device='cpu', dtype=pt.float64):
+    def __init__(self, M : int, 
+                      device : str='cpu', 
+                      dtype=pt.float64, 
+                      scale : float=0.1):
         super().__init__()
         self.device = device
         self.dtype = dtype
 
         self.seed = 100
-        self.scale = 0.1
+        self.scale = scale
         self.rng = np.random.RandomState(seed=self.seed)
 
         self.directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/Fixed_Point_NK_LBM/'

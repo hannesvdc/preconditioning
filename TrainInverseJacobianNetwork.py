@@ -52,7 +52,7 @@ class RHSDataset(Dataset):
         self.rhs_data.requires_grad = False
 
         # Load the xk dataset
-        self.xk_dataset = cr.ChemicalDataset(self.M)
+        self.xk_dataset = cr.ChemicalDataset(self.M, scale=0.0)
         self.xk_data = self.xk_dataset.data
         self.xk_data.requires_grad = False
 
@@ -74,7 +74,7 @@ def trainInverseJacobianNetwork():
 
     # Initialize the Network and the Optimizer (Adam)
     print('\nSetting Up the Inverse Jacobian Neural Network.')
-    inner_iterations = 4
+    inner_iterations = 25
     network = InverseJacobianLayer(F, inner_iterations)
     loss_fn = InverseJacobianLoss(network)
     optimizer = optim.Adam(network.parameters(), lr=0.001)
