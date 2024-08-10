@@ -68,7 +68,7 @@ def trainInverseJacobianNetwork():
     # Load the data in memory
     print('Generating Training Data.')
     M = 50
-    batch_size = 64
+    batch_size = 32
     dataset = RHSDataset(M)
     train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
@@ -128,30 +128,30 @@ def testInverseJacobianNetwork():
 
     # Load the data in memory
     print('Generating Training Data.')
-    M = 200
+    M = 50
     dataset = RHSDataset(M)
     xk_data = dataset.xk_data
     rhs_data = dataset.rhs_data
 
     # Initialize the Network
     print('\nSetting Up the Newton-Krylov Neural Network.')
-    inner_iterations = 10
+    inner_iterations = 95
     outer_iterations = 10
     network = InverseJacobianLayer(F, inner_iterations)
     store_directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/R2N2/NKNet/'
     network.load_state_dict(pt.load(store_directory + 'model_inverse_jacobian_inner='+str(inner_iterations)+'.pth'))
+    network.computeFValue(xk_data)
     f = network.f
-    F_value = network.F(xk_data)
 
     # Propagate the data through the network
-    w = pt.zeros_like(rhs_data)
-    averaged_errors = [pt.mean(pt.norm(f(w, rhs_data, xk_data, F_value), dim=1))]
+    w = network.eps * pt.ones_like(xk_data)
+    averaged_errors = [pt.mean(pt.norm(f(w, rhs_data, xk_data), dim=1))]
     for k in range(outer_iterations):
         print('k =', k)
 
-        input = (xk_data, rhs_data, w)
+        input = (xk_data, rhs_data)
         w = network.forward(input)
-        averaged_errors.append(pt.mean(pt.norm(f(w, rhs_data, xk_data, F_value), dim=1)))
+        averaged_errors.append(pt.mean(pt.norm(f(w, rhs_data, xk_data), dim=1)))
 
     # Plot the test errors
     k_array = np.linspace(0.0, outer_iterations, outer_iterations+1)
@@ -159,4 +159,4 @@ def testInverseJacobianNetwork():
     plt.show()
 
 if __name__ == '__main__':
-    trainInverseJacobianNetwork()
+    testInverseJacobianNetwork()
