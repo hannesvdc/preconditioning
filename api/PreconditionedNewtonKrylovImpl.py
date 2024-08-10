@@ -3,7 +3,8 @@ import torch.nn as nn
 
 class InverseJacobianLayer(nn.Module):
     """ Custom Layer that computes J^{-1} rhs using a Krylov Neural-Network """
-    def __init__(self, F_macro, inner_iterations):
+    def __init__(self, F_macro : function, 
+                       inner_iterations : int):
         super(InverseJacobianLayer, self).__init__()
 
         # Computes directional derivative via normed vectors
@@ -44,7 +45,9 @@ class InverseJacobianLayer(nn.Module):
     
 class PreconditionedNewtonKrylovLayer(nn.Module):
     """ Custom Preconditioned Newton-Krylov layer to solve M * (JF(xk) y = -F(xk)) """
-    def __init__(self, F, inner_iterations, inv_jac_layer):
+    def __init__(self, F : function, 
+                       inner_iterations : int, 
+                       inv_jac_layer : InverseJacobianLayer):
         super(PreconditionedNewtonKrylovLayer, self).__init__()
         self.F = F
 
@@ -80,7 +83,9 @@ class PreconditionedNewtonKrylovLayer(nn.Module):
         return y + pt.tensordot(V, self.weights[lower_index:upper_index], dims=([1],[0]))
 
 class PreconditionedNewtonKrylovNetwork(nn.Module):
-    def __init__(self, F, F_macro, inner_iterations : tuple[int, int]):
+    def __init__(self, F : function, 
+                       F_macro : function, 
+                       inner_iterations : tuple[int, int]):
         super(PreconditionedNewtonKrylovNetwork, self).__init__()
         
         self.inv_jac_layer = InverseJacobianLayer(F_macro, inner_iterations[1])
@@ -97,9 +102,9 @@ class PreconditionedNewtonKrylovNetwork(nn.Module):
 
 class PreconditionedNewtonKrylovLoss(nn.Module):
     def __init__(self, network : PreconditionedNewtonKrylovNetwork, 
-                       F, 
+                       F : function, 
                        outer_iterations : int, 
-                       base_weight=4.0):
+                       base_weight : float=4.0):
         super(PreconditionedNewtonKrylovLoss, self).__init__()
         
         self.F = F
