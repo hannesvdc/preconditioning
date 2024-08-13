@@ -3,40 +3,39 @@ import torch.nn as nn
 
 class InverseJacobianLayer(nn.Module):
     """ Custom Layer that computes J^{-1} rhs using a Krylov Neural-Network """
-    def __init__(self, F_macro : function, 
+    def __init__(self, F_macro, 
                        inner_iterations : int):
         super(InverseJacobianLayer, self).__init__()
 
         # Computes directional derivative via normed vectors
         self.eps = 1.e-8
-        self.F = F_macro
-        self.f = lambda w, rhs, xk: self.dF_w(w, xk) - rhs
+        self.F = F_macro # the function we want to solve, needs to n
+        self.dF_v = lambda xk, w, Fxk: (self.F(xk + self.eps*w) - Fxk) / self.eps
+        self.f = lambda xk, w, rhs, Fxk: self.dF_v(xk, w, Fxk) - rhs # The linear system during every outer iteration
 
         self.inner_iterations = inner_iterations
         self.n_weights = (inner_iterations * (inner_iterations + 1) ) // 2
         weights = pt.zeros(self.n_weights)
         self.weights = nn.Parameter(weights)
 
-    def dF_w(self, w, xk):
-        norm_w = pt.norm(w, dim=1, keepdim=True)
-        normed_w = w / norm_w
-        return norm_w * (self.F(xk + self.eps * normed_w) - self.F_value) / self.eps
+    # Input = (xk, rhs) or (xk, rhs, w)
+    def forward(self, input):
+        xk = input[0]
+        rhs = input[1]
+        Fxk = self.F(xk)
+        if len(input) > 2:
+            w = input[2]
+        else:
+            w = pt.zeros_like(xk)
 
-    def computeFValue(self, xk):
-        self.F_value = self.F(xk)
-
-    def forward(self, x):
-        xk  = x[0]
-        rhs = x[1]
-
-        w = self.eps * pt.ones_like(xk)
-        V = pt.empty((xk.shape[0], 0, xk.shape[1]))
-        for n in range(self.inner_iterations):
+        V = self.f(xk, w, rhs, Fxk)[:,None,:]
+        for n in range(1, self.inner_iterations):
             wp = self._N(w, V, n)
-            v = self.f(wp, rhs, xk)
+            v = self.f(xk, wp, rhs, Fxk)
             V = pt.cat((V, v[:,None,:]), dim=1)
 
-        return self._N(w, V, self.inner_iterations)
+        wp = self._N(w, V, self.inner_iterations)
+        return wp
     
     def _N(self, w, V, n):
         lower_index = ( (n-1) * n ) // 2
@@ -45,7 +44,7 @@ class InverseJacobianLayer(nn.Module):
     
 class PreconditionedNewtonKrylovLayer(nn.Module):
     """ Custom Preconditioned Newton-Krylov layer to solve M * (JF(xk) y = -F(xk)) """
-    def __init__(self, F : function, 
+    def __init__(self, F, 
                        inner_iterations : int, 
                        inv_jac_layer : InverseJacobianLayer):
         super(PreconditionedNewtonKrylovLayer, self).__init__()
@@ -83,8 +82,8 @@ class PreconditionedNewtonKrylovLayer(nn.Module):
         return y + pt.tensordot(V, self.weights[lower_index:upper_index], dims=([1],[0]))
 
 class PreconditionedNewtonKrylovNetwork(nn.Module):
-    def __init__(self, F : function, 
-                       F_macro : function, 
+    def __init__(self, F, 
+                       F_macro, 
                        inner_iterations : tuple[int, int]):
         super(PreconditionedNewtonKrylovNetwork, self).__init__()
         
@@ -102,7 +101,7 @@ class PreconditionedNewtonKrylovNetwork(nn.Module):
 
 class PreconditionedNewtonKrylovLoss(nn.Module):
     def __init__(self, network : PreconditionedNewtonKrylovNetwork, 
-                       F : function, 
+                       F, 
                        outer_iterations : int, 
                        base_weight : float=4.0):
         super(PreconditionedNewtonKrylovLoss, self).__init__()
