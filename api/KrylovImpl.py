@@ -52,13 +52,12 @@ class KrylovLoss(nn.Module):
         super(KrylovLoss, self).__init__()
         
         self.network = network
-        self.f = network.f
+        self.f = network.inner_layer.f
         self.outer_iterations = outer_iterations
         self.base_weight = base_weight
 
-    def forward(self, input):
-        x = input[0]
-        b = input[1]
+    def forward(self, b):
+        x = pt.zeros_like(b)
 
         loss = 0.0
         N_data = x.shape[0]
