@@ -32,7 +32,7 @@ class RHSDataset(pt.utils.data.Dataset):
 def trainKrylovNN(matrix_type, cond_factor=10):
     M = 100
     rng = rd.RandomState()
-    upper_s = rng.uniform(1.0, 2.0, 10) * cond_factor
+    upper_s = rng.uniform(0.1, 0.2, 10) * cond_factor
     lower_s = rng.uniform(0.1, 0.2, 90)
     S = np.diag(np.concatenate((upper_s, lower_s)))
     U, _ = lg.qr((rng.uniform(size=(M, M)) - 5.) * 200)
@@ -55,7 +55,7 @@ def trainKrylovNN(matrix_type, cond_factor=10):
     outer_iterations = 3
     network = KrylovNetwork(A, inner_iterations)
     loss_fn = KrylovLoss(network, outer_iterations)
-    optimizer = optim.Adam(network.parameters(), lr=0.001)
+    optimizer = optim.Adam(network.parameters(), lr=0.001, eps=1.e-2)
 
     # Training Routine
     train_losses = []
@@ -104,7 +104,7 @@ def testKrylovNN(A_numpy, matrix_type, cond_factor):
     pt.set_grad_enabled(False)
 
     # Initialize the Network
-    print('\nSetting Up the Inverse Jacobian Neural Network.')
+    print('\nSetting Up the Krylov Neural Network.')
     inner_iterations = 15
     outer_iterations = 10
     store_directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/R2N2/NKNet/'
@@ -117,21 +117,19 @@ def testKrylovNN(A_numpy, matrix_type, cond_factor):
     rhs_data = dataset.data
     x_data = pt.zeros_like(rhs_data)
     loss = lambda y: np.sum(np.square(A_numpy.dot(y) - rhs_data.numpy().T)) / dataset.N_data
-    print(type(A_numpy))
     errors = [loss(x_data.numpy().T)]
-    for k in range(outer_iterations):
+    for _ in range(outer_iterations):
         input = (x_data, rhs_data)
         x_data = network.forward(input)
         errors.append(loss(x_data.numpy().T))
 
     plt.semilogy(np.linspace(0, 11, 11), np.array(errors))
     plt.xlabel(r'# Outer Iterations $k$')
+    plt.ylabel(r'Backward Error')
     plt.show()
-
-    
 
 if __name__ == '__main__':
     matrix_type = 'symmetric'
-    cond_factor = 10
+    cond_factor = 100
     A_numpy = trainKrylovNN(matrix_type, cond_factor)
     testKrylovNN(A_numpy, matrix_type, cond_factor)
