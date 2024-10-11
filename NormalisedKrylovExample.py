@@ -49,23 +49,43 @@ def getMatrix(id):
         A = pt.from_numpy(A_numpy)
         print(lg.cond(A_numpy))
 
+    elif id == 3:
+        seed = 100
+        rng = rd.RandomState(seed=seed)
+        U = rng.normal(0.0, 1.0, size=(5,5))
+        Q_U = lg.qr(U)[0]
+        A_numpy = np.matmul(Q_U, np.matmul(np.diag([1.0, 0.9, 0.8, 0.2, 0.1]), Q_U.T))
+        A = pt.from_numpy(A_numpy)
+        print(lg.cond(A_numpy))
+
+    elif id == 4:
+        seed = 100
+        M = 100
+        rng = rd.RandomState(seed=seed)
+        U = rng.normal(0.0, 1.0, size=(M,M))
+        Q_U = lg.qr(U)[0]
+        A_numpy = np.matmul(Q_U, np.matmul(np.diag(np.sort(rng.uniform(0.0, 1.0, size=M))), Q_U.T))
+        A = pt.from_numpy(A_numpy)
+        print(lg.cond(A_numpy))
+
     return A_numpy, A
 
 def trainKrylovNN(id, A):
 
     print('Generating Training Data.')
+    M = A.shape[0]
     batch_size = 1024
-    dataset = RHSDataset(M=5)
+    dataset = RHSDataset(M=M)
     train_loader = pt.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
     # Initialize the Network and the Optimizer (Adam)
     print('\nSetting Up the Inverse Jacobian Neural Network.')
-    inner_iterations = 4
+    inner_iterations = 10
     outer_iterations = 3
     network = NormalisedKrylovNetwork(A, inner_iterations)
     loss_fn = NormalisedKrylovLoss(network, outer_iterations)
     optimizer = optim.Adam(network.parameters(), lr=0.01)
-    scheduler = sch.StepLR(optimizer, 20000, 0.1)
+    scheduler = sch.StepLR(optimizer, 10000, 0.1)
 
     # Training Routine
     train_losses = []
@@ -113,8 +133,8 @@ def testKrylovNN(id, A_numpy, A):
 
     # Initialize the Network
     print('\nSetting Up the Krylov Neural Network.')
-    inner_iterations = 4
-    outer_iterations = 20
+    inner_iterations = 10
+    outer_iterations = 10
     store_directory = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/R2N2/NKNet/'
     filename = 'normalised_krylov_nn_inner='+str(inner_iterations)+'_id=' + str(id) +'.pth'
     network = NormalisedKrylovNetwork(A, inner_iterations)
@@ -150,7 +170,7 @@ def testKrylovNN(id, A_numpy, A):
     plt.show()
 
 if __name__ == '__main__':
-    id = 1
+    id = 4
     A_numpy, A = getMatrix(id)
     
     trainKrylovNN(id, A)

@@ -1,54 +1,19 @@
 import torch as pt
 import torch.nn as nn
 
-class InverseJacobianLayer(nn.Module):
-    """ Custom Layer that computes J^{-1} rhs using a Krylov Neural-Network """
-    def __init__(self, F_macro, 
-                       inner_iterations : int):
-        super(InverseJacobianLayer, self).__init__()
-
-        # Computes directional derivative via normed vectors
-        self.eps = 1.e-8
-        self.F = F_macro # the function we want to solve, needs to n
-        self.dF_v = lambda xk, w, Fxk: (self.F(xk + self.eps*w) - Fxk) / self.eps
-        self.f = lambda xk, w, rhs, Fxk: self.dF_v(xk, w, Fxk) - rhs # The linear system during every outer iteration
-
-        self.inner_iterations = inner_iterations
-        self.n_weights = (inner_iterations * (inner_iterations + 1) ) // 2
-        weights = pt.zeros(self.n_weights)
-        self.weights = nn.Parameter(weights)
-
-    # Input = (xk, rhs) or (xk, rhs, w)
-    def forward(self, input):
-        xk = input[0]
-        rhs = input[1]
-        Fxk = self.F(xk)
-        if len(input) > 2:
-            w = input[2]
-        else:
-            w = pt.zeros_like(xk)
-
-        V = self.f(xk, w, rhs, Fxk)[:,None,:]
-        for n in range(1, self.inner_iterations):
-            wp = self._N(w, V, n)
-            v = self.f(xk, wp, rhs, Fxk)
-            V = pt.cat((V, v[:,None,:]), dim=1)
-
-        wp = self._N(w, V, self.inner_iterations)
-        return wp
-    
-    def _N(self, w, V, n):
-        lower_index = ( (n-1) * n ) // 2
-        upper_index = ( n * (n+1) ) // 2
-        return w + pt.tensordot(V, self.weights[lower_index:upper_index], dims=([1],[0]))
+from collections import OrderedDict
     
 class PreconditionedNewtonKrylovLayer(nn.Module):
-    """ Custom Preconditioned Newton-Krylov layer to solve M * (JF(xk) y = -F(xk)) """
-    def __init__(self, F, 
-                       inner_iterations : int, 
-                       inv_jac_layer : InverseJacobianLayer):
+    """ Custom Preconditioned Newton-Krylov layer to solve M * (JF(xk) y = -F(xk)). 
+
+        M_generator(xk, F_value) is a function that takes a (N_data, data_size) tensor and 
+        returns an (N_data, data_size, data_size) tensor with the Jacobian of a 
+        macroscopic function F_macro(xk) in the second and third dimensions. 
+    """
+    def __init__(self, F, inner_iterations, M_generator):
         super(PreconditionedNewtonKrylovLayer, self).__init__()
         self.F = F
+        print(F, inner_iterations, M_generator)
 
         self.eps = 1.e-8
         self.dF_v = lambda x, v, Fx: (self.F(x + self.eps*v) - Fx) / self.eps
@@ -59,19 +24,20 @@ class PreconditionedNewtonKrylovLayer(nn.Module):
         weights = pt.zeros(self.n_weights)
         self.weights = nn.Parameter(weights)
 
-        self.inv_jac_layer = inv_jac_layer
+        self.M_generator = M_generator
 
+    """ xk has shape (N_data, data_size) """
     def forward(self, xk):
-        F_value = self.F(xk) 
-        self.inv_jac_layer.computeFValue(xk)
+        F_value = self.F(xk) # Shape (N_data, data_size)
+        (LU, pivots) = pt.linalg.lu_factor(self.M_generator(xk, F_value), pivot=True) # LU has shape (N_data, data_size, data_size)
 
         y = pt.zeros_like(xk)
-        V = pt.empty((xk.shape[0], 0, xk.shape[1]))
+        V = pt.empty((xk.shape[0], 0, xk.shape[1])) # Shape (N_data, 0, data_size)
         for n in range(self.inner_iterations):
             yp = self._N(y, V, n)
-            v = self.f(xk, yp, F_value)
-            w = self.inv_jac_layer((xk, v))
-            V = pt.cat((V, w[:,None,:]), dim=1)
+            v = self.f(xk, yp, F_value) # Shape (N_data, data_size)
+            w = pt.linalg.lu_solve(LU, pivots, v[:,:,None])[:,:,0]
+            V = pt.cat((V, w[:,None,:]), dim=1) # Shape (N_data, n, data_size)
 
         yp = self._N(y, V, self.inner_iterations)
         return xk + yp
@@ -83,16 +49,13 @@ class PreconditionedNewtonKrylovLayer(nn.Module):
 
 class PreconditionedNewtonKrylovNetwork(nn.Module):
     def __init__(self, F, 
-                       F_macro, 
-                       inner_iterations : tuple[int, int]):
+                       inner_iterations,
+                       M_generator):
         super(PreconditionedNewtonKrylovNetwork, self).__init__()
         
-        self.inv_jac_layer = InverseJacobianLayer(F_macro, inner_iterations[1])
-        self.inner_layer = PreconditionedNewtonKrylovLayer(F, inner_iterations[0], self.inv_jac_layer)
-
-        self.params = []
-        self.params.extend(self.inv_jac_layer.parameters())
-        self.params.extend(self.inner_layer.parameters())
+        self.inner_layer = PreconditionedNewtonKrylovLayer(F, inner_iterations, M_generator)
+        layer_list = [('layer_0', self.inner_layer)]
+        self.layers = pt.nn.Sequential(OrderedDict(layer_list))
 
         print('Total Number of Preconditioned Newton-Krylov Parameters:', sum(p.numel() for p in self.parameters()))
 
@@ -100,14 +63,13 @@ class PreconditionedNewtonKrylovNetwork(nn.Module):
         return self.inner_layer(xk)
 
 class PreconditionedNewtonKrylovLoss(nn.Module):
-    def __init__(self, network : PreconditionedNewtonKrylovNetwork, 
-                       F, 
-                       outer_iterations : int, 
-                       base_weight : float=4.0):
+    def __init__(self, network,
+                       outer_iterations,
+                       base_weight=4.0):
         super(PreconditionedNewtonKrylovLoss, self).__init__()
         
-        self.F = F
         self.network = network
+        self.F = network.inner_layer.F
         self.outer_iterations = outer_iterations
         self.base_weight = base_weight
 

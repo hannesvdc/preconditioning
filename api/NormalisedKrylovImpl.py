@@ -26,7 +26,7 @@ class NormalisedKrylovLayer(nn.Module):
         r0 = self.f(x0, b)
         r0_norm = pt.norm(r0, dim=1, keepdim=True)
         v = self._N(V, r0, 0)
-        #v = v / pt.norm(v, dim=1, keepdim=True)
+        v = v / pt.norm(v, dim=1, keepdim=True)
         V = pt.cat((V, v[:,None,:]), dim=1)
 
         for n in range(1, self.inner_iterations):
@@ -34,7 +34,7 @@ class NormalisedKrylovLayer(nn.Module):
             r_n = self.f(x_in, b)
 
             v = self._N(V, r_n, n)
-            #v = v / pt.norm(v, dim=1, keepdim=True)
+            v = v / pt.norm(v, dim=1, keepdim=True)
             V = pt.cat((V, v[:,None,:]), dim=1)
 
         return x0 + r0_norm * self._N_final(V, self.inner_iterations)

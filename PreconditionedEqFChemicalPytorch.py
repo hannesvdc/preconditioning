@@ -21,6 +21,21 @@ psi_ef = lambda x: psi_eqfree_tensor(x, T_psi, n_micro, dT)
 # Setup the macroscopic preconditioning function
 T_pde = 0.05
 psi_macro = lambda x: psi_pde(x, T_pde)
+def M_generator(xk, F_value):
+    N_data = xk.shape[0]
+    ds = xk.shape[1]
+
+    I = pt.eye(ds)
+    M = pt.zeros((N_data, ds, ds))
+
+    eps = 1.e-8
+    for i in range(ds):
+        e = (I[:, i])[None,:] # Shape (1, ds) but broadcastable
+        F_diff = (psi_macro(xk + eps * e) - F_value) / eps
+        M[:,:,i] = F_diff
+
+    return M
+
 
 # Load the data in memory
 print('Generating Training Data.')
@@ -31,10 +46,10 @@ train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
 # Initialize the Preconditioned NK Network and the Optimizer (Adam)
 print('\nSetting Up the Newton-Krylov Neural Network.')
-inner_iterations = (4, 10) # (NK inner_iterations, preconditioned_inner_iterations)
-outer_iterations = 3       # Newton-Krylov outer iterations
-network = PreconditionedNewtonKrylovNetwork(psi_ef, psi_macro, inner_iterations)
-loss_fn = PreconditionedNewtonKrylovLoss(network, psi_ef, outer_iterations)
+inner_iterations = 4
+outer_iterations = 3
+network = PreconditionedNewtonKrylovNetwork(psi_ef, inner_iterations, M_generator)
+loss_fn = PreconditionedNewtonKrylovLoss(network, outer_iterations)
 optimizer = optim.Adam(network.parameters(), lr=0.001)
 scheduler = sch.StepLR(optimizer, step_size=1000, gamma=0.1)
 
