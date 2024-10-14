@@ -85,7 +85,7 @@ n_epochs = 10000
 try:
     for epoch in range(1, n_epochs+1):
         train(epoch)
-        scheduler.step()
+        #scheduler.step()
 except KeyboardInterrupt:
     print('Terminating Training. Plotting Training Error Convergence.')
 
