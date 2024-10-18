@@ -40,8 +40,8 @@ def M_generator(xk, F_value):
 # Load the data in memory
 print('Generating Training Data.')
 M = 200
-batch_size = 8
-dataset = ChemicalDataset(M=M)
+batch_size = 2
+dataset = ChemicalDataset(M=M, scale=0.1)
 train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
 # Initialize the Preconditioned NK Network and the Optimizer (Adam)
@@ -50,7 +50,7 @@ inner_iterations = 4
 outer_iterations = 3
 network = PreconditionedNewtonKrylovNetwork(psi_ef, inner_iterations, M_generator)
 loss_fn = PreconditionedNewtonKrylovLoss(network, outer_iterations)
-optimizer = optim.Adam(network.parameters(), lr=0.001)
+optimizer = optim.Adam(network.parameters(), lr=1.e-3)
 scheduler = sch.StepLR(optimizer, step_size=1000, gamma=0.1)
 
 # Training Routine
@@ -71,6 +71,7 @@ def train(epoch):
 
         # Do one Adam optimization step
         optimizer.step()
+        print(loss.item(), pt.norm(network.inner_layer.weights.grad))
 
     # Some housekeeping
     print('Train Epoch: {} \tLoss: {:.6f} \tLoss Gradient: {:.6f}'.format(epoch, loss.item(), pt.norm(network.inner_layer.weights.grad)))

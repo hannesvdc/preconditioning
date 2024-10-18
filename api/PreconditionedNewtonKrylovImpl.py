@@ -28,7 +28,9 @@ class PreconditionedNewtonKrylovLayer(nn.Module):
 
     """ xk has shape (N_data, data_size) """
     def forward(self, xk):
+        print('xk', xk)
         F_value = self.F(xk) # Shape (N_data, data_size)
+        print('F_value', F_value)
         (LU, pivots) = pt.linalg.lu_factor(self.M_generator(xk, F_value), pivot=True) # LU has shape (N_data, data_size, data_size)
 
         y = pt.zeros_like(xk)
@@ -36,10 +38,13 @@ class PreconditionedNewtonKrylovLayer(nn.Module):
         for n in range(self.inner_iterations):
             yp = self._N(y, V, n)
             v = self.f(xk, yp, F_value) # Shape (N_data, data_size)
+            print('v', v)
             w = pt.linalg.lu_solve(LU, pivots, v[:,:,None])[:,:,0]
+            print('w', w)
             V = pt.cat((V, w[:,None,:]), dim=1) # Shape (N_data, n, data_size)
 
         yp = self._N(y, V, self.inner_iterations)
+        print('yp', yp)
         return xk + yp
     
     def _N(self, y, V, n):
