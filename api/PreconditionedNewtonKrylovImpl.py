@@ -16,7 +16,7 @@ class PreconditionedNewtonKrylovLayer(nn.Module):
         print(F, inner_iterations, M_generator)
 
         self.eps = 1.e-8
-        self.dF_v = lambda x, v, Fx: (self.F(x + self.eps*v) - Fx) / self.eps
+        #self.dF_v = lambda x, v, Fx: (self.F(x + self.eps*v) - Fx) / self.eps
         self.f = lambda x, v, Fx: self.dF_v(x, v, Fx) + Fx
         
         self.inner_iterations = inner_iterations
@@ -25,6 +25,12 @@ class PreconditionedNewtonKrylovLayer(nn.Module):
         self.weights = nn.Parameter(weights)
 
         self.M_generator = M_generator
+
+    def dF_v(self, x, v, Fx):
+        a = self.F(x + self.eps*v)
+        print('input = ', x + self.eps*v)
+        return (a - Fx) / self.eps
+        
 
     """ xk has shape (N_data, data_size) """
     def forward(self, xk):
@@ -37,6 +43,7 @@ class PreconditionedNewtonKrylovLayer(nn.Module):
         V = pt.empty((xk.shape[0], 0, xk.shape[1])) # Shape (N_data, 0, data_size)
         for n in range(self.inner_iterations):
             yp = self._N(y, V, n)
+            print('yp', yp)
             v = self.f(xk, yp, F_value) # Shape (N_data, data_size)
             print('v', v)
             w = pt.linalg.lu_solve(LU, pivots, v[:,:,None])[:,:,0]

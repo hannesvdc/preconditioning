@@ -65,6 +65,9 @@ def train(epoch):
 
         # Compute Loss. NewtonKrylovLoss takes care of network forwards
         loss = loss_fn(data)
+        if pt.any(pt.isnan(loss)):
+            print('NaN-values detected during training.')
+            return
 
         # Compute loss gradient
         loss.backward()
