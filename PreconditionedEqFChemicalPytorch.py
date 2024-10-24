@@ -50,7 +50,7 @@ inner_iterations = 4
 outer_iterations = 3
 network = PreconditionedNewtonKrylovNetwork(psi_ef, inner_iterations, M_generator)
 loss_fn = PreconditionedNewtonKrylovLoss(network, outer_iterations)
-optimizer = optim.Adam(network.parameters(), lr=1.e-3)
+optimizer = optim.Adam(network.parameters(), lr=1.e-4)
 scheduler = sch.StepLR(optimizer, step_size=1000, gamma=0.1)
 
 # Training Routine
@@ -67,7 +67,7 @@ def train(epoch):
         loss = loss_fn(data)
         if pt.any(pt.isnan(loss)):
             print('NaN-values detected during training.')
-            return
+            exit(1)
 
         # Compute loss gradient
         loss.backward()
