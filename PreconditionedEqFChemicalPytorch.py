@@ -12,6 +12,27 @@ from ChemicalRoutines import psi_eqfree_tensor, psi_pde, ChemicalDataset
 pt.set_grad_enabled(True)
 pt.set_default_dtype(pt.float64)
 
+# Own learning-rate scheduler with warmup to reduce chance of NaN-values during training
+class WarmupStepLR(sch.LRScheduler):
+    def __init__(self, optimizer, init_lr, warmup=100, step_size=1000, gamma=0.1):
+        self.warmup = warmup
+        self.step_size = step_size
+        self.gamma = gamma
+        self.init_lr = init_lr
+
+        self.epoch = 0
+        super(WarmupStepLR, self).__init__(optimizer)
+
+    def get_lr(self):
+        if self.epoch <= self.warmup:
+            return (1.0 * self.epoch) / self.warmup * self.init_lr
+        else:
+            return self.lr
+        
+    def step(self):
+        self.epoch += 1
+        self.lr = self.init_lr * self.gamma**(self.epoch // self.step_size)
+
 # Setup the equation-free function
 n_micro = 1000
 dT = 0.1
@@ -46,12 +67,13 @@ train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
 # Initialize the Preconditioned NK Network and the Optimizer (Adam)
 print('\nSetting Up the Newton-Krylov Neural Network.')
+init_lr = 1.e-3
 inner_iterations = 4
 outer_iterations = 3
 network = PreconditionedNewtonKrylovNetwork(psi_ef, inner_iterations, M_generator)
 loss_fn = PreconditionedNewtonKrylovLoss(network, outer_iterations)
-optimizer = optim.Adam(network.parameters(), lr=1.e-4)
-scheduler = sch.StepLR(optimizer, step_size=1000, gamma=0.1)
+optimizer = optim.Adam(network.parameters(), lr=init_lr)
+scheduler = WarmupStepLR(optimizer, init_lr=init_lr, warmup=100, step_size=1000, gamma=0.1)#sch.StepLR(optimizer, step_size=1000, gamma=0.1)
 
 # Training Routine
 train_losses = []
@@ -89,7 +111,7 @@ n_epochs = 10000
 try:
     for epoch in range(1, n_epochs+1):
         train(epoch)
-        #scheduler.step()
+        scheduler.step()
 except KeyboardInterrupt:
     print('Terminating Training. Plotting Training Error Convergence.')
 
