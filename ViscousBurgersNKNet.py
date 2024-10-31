@@ -41,13 +41,6 @@ def pde_timestepper(u, f, dt, left_bc_burg, right_bc_burg):
 #     diff = 0.5 * D * (v_right - 2.0*v + v_left) / dx**2
 #     return (-flux + diff)[1:N]
 
-def heat_timestepper(u, dt):
-    v = np.hstack([left_bc, u, right_bc])
-    v_left = np.roll(v, 1)
-    v_right = np.roll(v, -1)
-
-    diff = 0.5 * D * (v_right - 2.0*v + v_left) / dx**2
-    return (v + dt * diff)[1:N]
 
 def heat_robin_timestepper(v, dt):
     v_left = np.roll(v, 1)
@@ -131,68 +124,6 @@ def solveRobinHeatPDE():
     ax2.legend()
     plt.show()
 
-def solveHeatPDE():
-    m = np.linspace(left_bc, right_bc, N+1)
-    v0 = 4 * m**2 - 8*m + 5
-    u0 = v0[1:N]
-
-    dt = 1.e-3
-    T = 30.0
-    u = np.copy(u0)
-    u_transient = [v0]
-    phi_transient = [coleHopf(v0)]
-    for n in range(int(T/dt)):
-        if n % 1000 == 0:
-            print('t =', (n+1)*dt)
-        u = heat_timestepper(u, dt)
-        phi = coleHopf(np.hstack([left_bc, u, right_bc]))
-
-        if n % 100 == 0:
-            u_transient.append(np.hstack([left_bc, u, right_bc]))
-            phi_transient.append(np.copy(phi))
-
-    
-
-    image_folder = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/burgers/'
-    for n in range(len(u_transient)):
-        # Plot the steady state
-        fig, (ax1, ax2) = plt.subplots(1, 2)
-        x_axis = np.arange(u_transient[n].size) / N
-        ax1.plot(x_axis, u_transient[n], label=r'$w(x, t)$')
-        ax1.set_title('Heat Equation')
-        ax1.set_xlabel(r'$x$')
-        ax1.legend()
-        ax2.plot(x_axis, phi_transient[n], label=r'$\phi(x, t)$')
-        ax2.set_title('Cole-Hopf Transform')
-        ax2.set_xlabel(r'$x$')
-        ax2.legend()
-
-        plt.savefig(image_folder + str(n) + '_img.png')
-        (width, height) = fig.canvas.get_width_height()
-        plt.close()
-
-    video_folder = '/Users/hannesvdc/OneDrive - Johns Hopkins/Research_Data/Preconditioning_for_Bifurcation_Analysis/burgers/'
-    video_name = 'ColeHopf.avi'
-    fps = 10
-    video = cv2.VideoWriter(video_folder + video_name, 0, fps, (width, height))
-    for n in range(len(u_transient)):
-        video.write(cv2.imread(os.path.join(image_folder, str(n) + '_img.png')))
-    cv2.destroyAllWindows()
-    video.release()
-
-    # Plot the steady state
-    fig, (ax1, ax2) = plt.subplots(1, 2)
-    x_axis = np.arange(u_transient[-1].size) / N
-    ax1.plot(x_axis, u_transient[-1], label=r'$w(x, t)$')
-    ax1.set_title('Heat Equation')
-    ax1.set_xlabel(r'$x$')
-    ax1.legend()
-    ax2.plot(x_axis, phi_transient[-1], label=r'$\phi(x, t)$')
-    ax2.set_title('Cole-Hopf Transform')
-    ax2.set_xlabel(r'$x$')
-    ax2.legend()
-    plt.show()
-
 def fd(phi, dx):
     M = len(phi)
     dphi_left = (phi[1] - phi[0]) / dx
@@ -209,14 +140,9 @@ def fd(phi, dx):
 def coleHopf(u):
     return fd(-D * np.log(u), dx)
 
-def solvePDE(plot=True):
+def solveBurgersPDE(plot=True):
     f = lambda u: 0.5 * np.square(u)
     m = np.linspace(0.0, 1.0, N+1)
-    #v0 = 4 * m**2 - 8*m + 5
-    #u0 = v0[1:N]
-    #v_heat_0 = 4 * m**2 - 8*m + 5
-    #v0 = coleHopf(v_heat_0)
-    #u0 = v0[1:N]
     v0 = 2.0 - 4.0*m
     u0 = v0[1:N]
     left_bc_burg = 2.2315
@@ -269,45 +195,45 @@ def setupRecNet(outer_iterations=3, inner_iterations=4, baseweight=4.0):
 
     return net, loss_fn, d_loss_fn, F
 
-# def sampleWeights(net):
-#     inner_iterations = net.inner_iterations
-#     n_weights = (inner_iterations * (inner_iterations + 1) ) // 2
-#     return np.zeros(n_weights)
+def sampleWeights(net):
+    inner_iterations = net.inner_iterations
+    n_weights = (inner_iterations * (inner_iterations + 1) ) // 2
+    return np.zeros(n_weights)
         
-# # Only used to train Newton-Krylov network with 10 inner iterations
-# def trainNKNetAdam():
-#     net, loss_fn, d_loss_fn, _ = setupRecNet(outer_iterations=3, inner_iterations=4)
-#     weights = sampleWeights(net)
-#     print('Initial Loss', loss_fn(weights))
-#     print('Initial Loss Derivative', lg.norm(d_loss_fn(weights)))
+# Only used to train Newton-Krylov network with 10 inner iterations
+def trainNKNetAdam():
+    net, loss_fn, d_loss_fn, _ = setupRecNet(outer_iterations=3, inner_iterations=4)
+    weights = sampleWeights(net)
+    print('Initial Loss', loss_fn(weights))
+    print('Initial Loss Derivative', lg.norm(d_loss_fn(weights)))
 
-#     # Setup the optimizer
-#     scheduler = sch.PiecewiseConstantScheduler({0: 1.e-2, 2500: 1.e-3})
-#     optimizer = adam.AdamOptimizer(loss_fn, d_loss_fn, scheduler=scheduler)
-#     print('Initial weights', weights)
+    # Setup the optimizer
+    scheduler = sch.PiecewiseConstantScheduler({0: 1.e-2, 2500: 1.e-3})
+    optimizer = adam.AdamOptimizer(loss_fn, d_loss_fn, scheduler=scheduler)
+    print('Initial weights', weights)
 
-#     # Do the training
-#     epochs = 3000
-#     try:
-#         weights = optimizer.optimize(weights, n_epochs=epochs)
-#     except KeyboardInterrupt: # If Training has converged well enough with Adam, the user can stop manually
-#         print('Aborting Training. Plotting Convergence')
-#         weights = optimizer.lastweights
-#     print('Done Training at', len(optimizer.losses), 'epochs. Weights =', weights)
-#     losses = np.array(optimizer.losses)
-#     grad_norms = np.array(optimizer.gradient_norms)
+    # Do the training
+    epochs = 3000
+    try:
+        weights = optimizer.optimize(weights, n_epochs=epochs)
+    except KeyboardInterrupt: # If Training has converged well enough with Adam, the user can stop manually
+        print('Aborting Training. Plotting Convergence')
+        weights = optimizer.lastweights
+    print('Done Training at', len(optimizer.losses), 'epochs. Weights =', weights)
+    losses = np.array(optimizer.losses)
+    grad_norms = np.array(optimizer.gradient_norms)
 
-#     # Post-processing
-#     x_axis = np.arange(len(losses))
-#     plt.grid(linestyle = '--', linewidth = 0.5)
-#     plt.semilogy(x_axis, losses, label='Training Loss')
-#     plt.semilogy(x_axis, grad_norms, label='Loss Gradient', alpha=0.7)
-#     plt.xlabel('Epoch')
-#     plt.title('Adam')
-#     plt.legend()
-#     plt.show()
+    # Post-processing
+    x_axis = np.arange(len(losses))
+    plt.grid(linestyle = '--', linewidth = 0.5)
+    plt.semilogy(x_axis, losses, label='Training Loss')
+    plt.semilogy(x_axis, grad_norms, label='Loss Gradient', alpha=0.7)
+    plt.xlabel('Epoch')
+    plt.title('Adam')
+    plt.legend()
+    plt.show()
 
-#     return weights
+    return weights
 
 def testNKNet(weights=None):
     # Setup the network and load the weights. All training done using BFGS routine above.
@@ -358,7 +284,7 @@ def testNKNet(weights=None):
     # plt.show()
 
     # Show the found steady-state solution versus the exact solution to the PDE
-    v_pde = solvePDE(plot=True)
+    v_pde = solveBurgersPDE(plot=False)
     #nknet = np.hstack([left_bc, samples[:,10,0], right_bc])
     x_array = np.arange(v_pde.size) / N
     plt.plot(x_array, v_pde, label='Exact Solution')
